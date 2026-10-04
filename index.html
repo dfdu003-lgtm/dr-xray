@@ -1,0 +1,632 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>DR X-Ray Simulator</title>
+<meta name="theme-color" content="#2b3037"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="DR X-Ray">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#c9cfd6;--pn:rgba(255,255,255,.93);--ink:#1d2733;--mu:#5d6b7a;--ac:#1f6fd1;--ln:#d3d9e0;--bt:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--pn:rgba(30,37,46,.94);--ink:#e8edf2;--mu:#9aa8b6;--ac:#4f9bff;--ln:#38424f;--bt:#2a333e}}
+:root[data-theme=dark]{--pn:rgba(30,37,46,.94);--ink:#e8edf2;--mu:#9aa8b6;--ac:#4f9bff;--ln:#38424f;--bt:#2a333e}
+html,body{height:100%;margin:0}body{overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+#cv,#arrows{position:fixed;inset:0;width:100%;height:100%;display:block}#cv{touch-action:none}#arrows{pointer-events:none}
+#arrows line{stroke:#1f6fd1;stroke-width:1.5;marker-end:url(#ah)}
+#top{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:0;right:0;text-align:center;pointer-events:none;z-index:5}
+h1{margin:0;font-size:clamp(14px,2.3vw,20px);font-weight:600;letter-spacing:.02em}
+#bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 8px 0;pointer-events:auto}
+button{font:inherit;background:var(--bt);color:var(--ink);border:1px solid var(--ln);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.pn{position:fixed;background:var(--pn);border:1px solid var(--ln);border-radius:12px;backdrop-filter:blur(8px);z-index:6;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+#menu{left:10px;top:104px;width:190px;max-height:calc(100% - 175px);overflow:auto;padding:6px}
+#menu h3{margin:8px 10px 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.mi{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:7px}.mi.on{background:var(--ac);color:#fff}
+#info{right:10px;top:104px;width:340px;max-height:calc(100% - 175px);overflow:auto;padding:14px 16px;display:none}#info.show{display:block}
+#info h2{margin:0 28px 6px 0;font-size:16px;text-transform:uppercase;letter-spacing:.03em}
+#info h4{margin:12px 0 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac)}
+#info p,#info ul{margin:0;font-size:13px}#info ul{padding-left:18px}
+#x{position:absolute;right:8px;top:8px;padding:2px 8px}
+.safe{background:rgba(230,126,34,.13);border-left:3px solid #e67e22;padding:6px 8px;border-radius:4px}
+#hint{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);left:0;right:0;text-align:center;color:var(--mu);font-size:13px;pointer-events:none}
+#cap{left:50%;transform:translateX(-50%);bottom:42px;width:min(640px,92vw);padding:10px 14px;display:none}
+#cap .cb{display:flex;gap:8px;align-items:center;margin-top:6px}#cap .d{width:9px;height:9px;border-radius:50%;background:var(--ln)}#cap .d.a{background:var(--ac)}
+#lbls{position:fixed;inset:0;pointer-events:none;display:none;z-index:4}#lbls.on{display:block}
+.lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;font-size:12px;background:var(--ac);color:#fff;padding:2px 9px;border-radius:10px;white-space:nowrap}
+#tip{position:fixed;pointer-events:none;background:#1d2733;color:#fff;padding:3px 8px;border-radius:6px;font-size:12px;display:none;z-index:9}
+#mt{display:none}
+@media(max-width:760px){#mt{display:inline-block}#menu{display:none;top:auto;bottom:40px;max-height:50%}#menu.open{display:block}
+#info{left:8px;right:8px;top:auto;bottom:40px;width:auto;max-height:42%}}
+
+#stat{display:none;margin:6px auto 0;width:max-content;padding:3px 14px;border-radius:14px;font-weight:600;color:#fff}.okp{background:#1e9e55}.badp{background:#d9822b}
+#pp{left:10px;top:104px;width:318px;max-height:calc(100% - 150px);overflow:auto;padding:10px 12px;display:none}
+#pp .ph,#res .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#pp .ph button,#res .ph button{padding:1px 8px}
+#pp .fl,#sl label{display:block;font-size:12px;color:var(--mu);margin:6px 0}#pp select{width:100%;font:inherit;padding:6px;border-radius:8px;border:1px solid var(--ln);background:var(--bt);color:var(--ink)}
+#pp .row{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}#pp .row button{flex:1;padding:6px 6px;font-size:13px}
+#sl label span{display:flex;justify-content:space-between}#sl input{width:100%;margin:2px 0}#exi p{margin:3px 0;font-size:12.5px}
+#chk{margin-top:6px;font-size:12.5px}.ok{color:#1e9e55}.bad{color:#d9822b}
+#res{display:none;left:50%;transform:translateX(-50%);bottom:42px;width:min(420px,92vw);padding:10px 14px;font-size:13px}
+#res.big{top:50%;bottom:auto;transform:translate(-50%,-50%);max-height:88%;overflow:auto}.warn{background:#d9822b;color:#fff;border-radius:6px;padding:3px 8px;font-weight:600;font-size:12px;text-align:center}
+#hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:4}.hl{position:absolute;transform:translate(-50%,-100%);color:#fff;font-size:11px;padding:1px 7px;border-radius:9px;white-space:nowrap}
+body.pos #menu{display:none}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.22))}
+@media(max-width:760px){button{padding:5px 8px;font-size:12px}#bar{gap:4px}#pp{left:8px;right:8px;top:auto;bottom:36px;width:auto;max-height:44%}body.pos #info{display:none!important}#res{bottom:36px}}
+@media(max-height:500px){#menu,#info,#pp{top:84px;max-height:calc(100% - 120px)}h1{font-size:13px}#bar{margin-top:4px}button{padding:4px 8px;font-size:12px}}
+
+#pp{display:none;flex-direction:column;padding:0;overflow:hidden;left:10px;right:auto;top:104px;bottom:56px;width:330px;max-height:none;height:auto}
+#pp .ph{display:flex;align-items:center;gap:8px;padding:10px 12px;margin:0;border-bottom:1px solid var(--ln);position:relative;touch-action:none}
+#pp .ph b{flex:1;font-size:14px}#pp .ph em{font-style:normal;font-size:12px;font-weight:600;padding:2px 9px;border-radius:10px;color:#fff}.okc{background:#1e9e55}.badc{background:#d9822b}
+#pp .ph button{min-width:36px;min-height:36px;padding:2px 8px}#pp .gr{display:none}
+#ppb{overflow:auto;flex:1;padding:2px 12px 12px;-webkit-overflow-scrolling:touch}
+.ac{border-bottom:1px solid var(--ln)}.ah{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:none;border-radius:0;padding:10px 2px;font-weight:600;min-height:44px}
+.ah i{font-style:normal;transition:transform .2s}.ac.open .ah i{transform:rotate(180deg)}.ab{display:none;padding:0 0 12px}.ac.open .ab{display:block}
+.ab label{display:block;font-size:12.5px;color:var(--mu);margin:8px 0 2px}.ab label span{display:flex;justify-content:space-between}
+.ab input[type=range]{width:100%;height:32px;margin:0;accent-color:var(--ac)}.ab select{width:100%;font:inherit;padding:9px;border-radius:8px;border:1px solid var(--ln);background:var(--bt);color:var(--ink)}
+#pp .row{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}#pp .row button{flex:1 1 40%;min-height:42px;font-size:13px}#ba,#bd{width:100%;margin-top:8px;min-height:42px}
+#fab{display:none;position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:7;background:var(--ac);color:#fff;border:0;border-radius:24px;padding:11px 18px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+body.pos #fab{display:none}
+html{-webkit-text-size-adjust:100%}body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,select{-webkit-user-select:auto;user-select:auto}
+@media(max-width:1100px){#bar button{padding:6px 9px;font-size:13px}}
+@media(min-width:1500px){#pp,#info{width:370px}#menu{width:220px}}
+@media(max-height:500px){#pp{width:250px;top:76px;bottom:8px}#menu{width:150px}#info{width:250px}.mi{padding:5px 8px;font-size:13px}#hint{display:none}
+#bar{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:0 8px 4px;scrollbar-width:none}#bar::-webkit-scrollbar{display:none}#bar button{flex:none;white-space:nowrap}}
+@media(max-width:900px) and (orientation:portrait){
+#pp{left:0;right:0;top:auto;bottom:0;width:auto;height:var(--ph,38vh);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
+#pp .gr{display:block;position:absolute;top:5px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--mu);opacity:.5}
+#pp .ph{padding-top:17px;cursor:grab}#fab{display:block}body.pos #fab{display:none}
+#hint{right:150px;text-align:left;padding-left:12px;font-size:11px}body.pos #hint{display:none}
+#bar{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;margin:6px 0 0;padding:0 8px 4px;scrollbar-width:none}#bar::-webkit-scrollbar{display:none}
+#bar button{flex:none;white-space:nowrap;min-height:38px}#bpos{display:none}body.pos #res:not(.big){bottom:66px}body.pos #info{display:none!important}}
+#gd{display:none;flex-direction:column;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);max-height:80%;z-index:8;padding:0;overflow:hidden}
+#gd .gh{display:flex;gap:6px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--ln)}#gd .gh button{min-height:38px}
+#gd .gb{overflow:auto;padding:6px 18px 16px;line-height:1.85;font-size:14px;text-align:right;-webkit-overflow-scrolling:touch}
+#gd h3{margin:14px 0 4px;font-size:15px;color:var(--ac)}#gd ul,#gd ol{margin:0;padding:0 20px 0 0}#gd p{margin:6px 0}#gd .warn{display:block}
+#gd label{display:block;margin:8px 0;font-size:13px;color:var(--mu)}#gd input{width:100%;font:inherit;padding:9px;margin-top:3px;border-radius:8px;border:1px solid var(--ln);background:var(--bt);color:var(--ink);box-sizing:border-box;-webkit-user-select:auto;user-select:auto}
+#gd .gb>button{margin-top:10px;min-height:42px}
+#boot{position:fixed;inset:0;z-index:200;background:#15191e;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:16px/1.8 system-ui;opacity:0;animation:bootin .01s 1.6s forwards}@keyframes bootin{to{opacity:1}}
+</style></head><body>
+<div id="boot"><div dir="auto"><b>DR X-Ray Simulator</b><br>إذا شفت هذي الرسالة فالعارض الحالي لا يشغّل JavaScript (مثل معاينة تطبيق Files على iPhone).<br>افتح الرابط المستضاف بـ Safari وأضفه للشاشة الرئيسية، أو افتح هذا الملف بمتصفح على حاسوب أو أندرويد.<br><br>If you see this message, this viewer does not run JavaScript (for example the iPhone Files preview). Open the hosted link in Safari and Add to Home Screen, or open this file in a desktop/Android browser.</div></div>
+<canvas id="cv"></canvas>
+<svg id="arrows"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1f6fd1"/></marker></defs></svg>
+<div id="lbls"></div>
+<div id="top"><h1>Interactive Digital Radiography X-Ray Machine</h1>
+<div id="bar"><button id="mt">☰ Components</button><button id="be">Educational Mode</button><button id="bx">Exploded View</button><button id="bp">How X-rays are Produced</button><button id="bpos">Patient Positioning</button><button id="bcen">Centering Mode</button><button id="bexp">Exposure Simulation</button><button id="bguide">❔ دليل / About</button><button id="br">Reset View</button></div><div id="stat"></div></div>
+<button id="fab">⚙ Positioning</button><div id="menu" class="pn"></div><div id="info" class="pn"></div><div id="cap" class="pn"></div><div id="tip"></div>
+<div id="hint">Rotate • Zoom • Select a component to learn more</div>
+<script>/*T0*/</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+<script>window.THREE||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" crossorigin="anonymous"><\/script>')</script>
+<script>window.THREE||document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js" crossorigin="anonymous"><\/script>')</script>
+<script>window.THREE||document.write('<script src="three.min.js"><\/script>')</script>
+<script>/*T1*/</script>
+<script>
+window.__D={three:0,gl:0,ren:0,scene:0,machine:0,frame:0,errs:[]};
+(()=>{const b=document.getElementById('boot');if(b&&b.parentNode)b.parentNode.removeChild(b)})();
+(()=>{const D=window.__D,esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])),row=(ok,t)=>'<div>'+(ok?'✅':'❌')+' '+t+'</div>';
+const btn=()=>{if(document.getElementById('dbtn'))return;const x=document.createElement('button');x.id='dbtn';x.textContent='⚠ Diagnostics';x.style.cssText='position:fixed;left:8px;bottom:60px;z-index:99;background:#b3261e;color:#fff;border:0;border-radius:14px;padding:6px 12px;font:12px system-ui';x.onclick=()=>window.showDiag();document.body.appendChild(x)};
+window.showDiag=why=>{let o=document.getElementById('diag');if(!o){o=document.createElement('div');o.id='diag';o.style.cssText='position:fixed;inset:0;z-index:100;background:#15191e;color:#e8edf2;font:14px/1.6 system-ui;padding:16px;overflow:auto;direction:ltr;text-align:left';document.body.appendChild(o)}
+const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);let g='';
+try{const c=document.createElement('canvas'),x=c.getContext('webgl2')||c.getContext('webgl');if(x){const e=x.getExtension('WEBGL_debug_renderer_info');g=e?x.getParameter(e.UNMASKED_RENDERER_WEBGL):'available'}}catch(e){}
+const hn=[];if(location.protocol==='file:'&&ios)hn.push('iPhone/iPad: opening an HTML file from the Files app uses a preview that may block JavaScript or WebGL. Use the hosted link in Safari and Add to Home Screen (works offline after one online visit).');
+if(!D.three)hn.push('Three.js is missing: upload three.min.js (r128) next to index.html (get-three.html downloads and verifies it), or re-create the file with Make-Standalone.');else if(!D.gl&&!g)hn.push('WebGL is off or unavailable: close other tabs, turn off Low Power Mode, restart Safari.');
+if(D.errs.some(e=>/memory|context/i.test(e)))hn.push('Memory/context problem: close other apps/tabs and reload.');
+o.style.display='block';o.innerHTML='<h3 style="margin:0 0 8px">DR X-Ray Simulator – Diagnostics</h3>'+(why?'<p style="color:#ffb347">'+esc(why)+'</p>':'')+row(D.three,'Three.js loaded'+(window.THREE?' (REVISION '+THREE.REVISION+')':''))+row(D.gl,'WebGL available'+(g?' – '+esc(g):''))+row(D.ren,'Renderer created')+row(D.scene,'Scene created')+row(D.machine,'Machine created')+row(D.frame,'First frame rendered')+'<h4 style="margin:12px 0 4px">JavaScript errors</h4>'+(D.errs.length?D.errs.map(e=>'<pre style="white-space:pre-wrap;margin:2px 0;color:#ff8a80">'+esc(e)+'</pre>').join(''):'<div>none</div>')+'<h4 style="margin:12px 0 4px">Environment</h4><pre style="white-space:pre-wrap;font-size:12px">'+esc(ua+'\nprotocol: '+location.protocol+'\nscreen: '+innerWidth+'x'+innerHeight+' @'+devicePixelRatio)+'</pre>'+hn.map(x=>'<p style="color:#9fd3ff">'+esc(x)+'</p>').join('')+'<button style="font:inherit;padding:10px 18px;border-radius:8px;margin-top:8px" onclick="this.parentNode.style.display=\'none\'">Close</button>'};
+const push=m=>{if(D.errs.indexOf(m)<0)D.errs.push(m);if(!D.frame)window.showDiag('JavaScript error before the 3D scene started');else btn()};
+addEventListener('error',e=>push((e.message||'error')+(e.lineno?' (line '+e.lineno+')':'')));addEventListener('unhandledrejection',e=>push('Promise: '+((e.reason&&e.reason.message)||e.reason)));
+setTimeout(()=>{if(!D.frame)window.showDiag('The 3D scene did not start within 5 seconds')},5000)})();
+if(typeof THREE==='undefined'){window.showDiag('Three.js was not loaded (missing from this file, or blocked).');throw new Error('three.min.js missing')}
+window.__D.three=1;
+(()=>{let ok=false;try{const c=document.createElement('canvas');ok=!!(c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl'))}catch(e){}if(!ok){window.showDiag('WebGL is not available in this browser or viewer.');throw new Error('webgl unavailable')}window.__D.gl=1})();
+['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+
+const PI=Math.PI,$=s=>document.querySelector(s),V=(x,y,z)=>new THREE.Vector3(x,y,z),cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+const D={
+tube:['X-Ray Tube','A vacuum tube inside a lead-lined, oil-cooled housing where X-rays are generated.','Produces X-rays by accelerating electrons from the cathode toward the anode target.','A heated filament releases electrons; a high voltage (40–150 kVp) accelerates them across the vacuum. Under 1% of their energy becomes X-rays; the rest becomes heat.','Converts electrical energy into X-ray radiation and heat.',['Tube voltage 40–150 kVp, current up to several hundred mA','Dual focal spots (about 0.6 / 1.2 mm)','Housing limits leakage radiation'],'Never operate a damaged housing; respect heat-unit limits and cooling times.',['Cathode','Anode','Target','Vacuum envelope','Rotor & stator']],
+cathode:['Cathode','The negative electrode: a coiled tungsten filament set in a focusing cup.','Supplies electrons and focuses them into a narrow beam toward the target.','A filament current of a few amps heats the tungsten until it emits electrons (thermionic emission). The negatively charged cup repels them into a tight stream.','Sets tube current (mA): more filament heat gives more electrons and more X-rays.',['Thoriated tungsten wire, roughly 2,200 °C when hot','Small and large filaments give two focal spot sizes'],'Long "prep" heating shortens filament life.'],
+cup:['Focusing Cup','A negatively charged nickel or molybdenum cup around the filament.','Shapes the electron cloud into a beam that lands on a small focal spot.','Its negative potential squeezes the stream toward the anode (electrostatic focusing).','Determines focal spot size and therefore image sharpness.',['Slot geometry sets spot size']],
+filament:['Filament','A small coil of tungsten wire at the heart of the cathode.','Releases electrons when heated.','Current heats the coil to incandescence; electrons gain enough energy to escape the metal (thermionic emission).','The electron source; its temperature controls the mA.',['Tungsten melts at 3,422 °C','Typical filament current 3–6 A']],
+anode:['Anode','The positive electrode: a rotating disc with a tungsten-alloy target track.','Attracts electrons, provides the target, and dissipates heat.','The disc spins at roughly 3,000–10,000 rpm so the beam always hits a fresh area, spreading the heat. The bevel angle projects a small effective focal spot.','Defines the X-ray source and the tube’s heat capacity.',['Molybdenum/graphite core, tungsten–rhenium track','Anode angle about 10–16°','Heel effect: intensity falls toward the anode side'],'Do not exceed the anode heat capacity.'],
+target:['Target (Focal Track)','The bevelled ring of tungsten–rhenium alloy on the anode where electrons land.','Converts electron energy into X-rays.','Fast electrons decelerate near tungsten nuclei (bremsstrahlung) or knock out inner-shell electrons (characteristic radiation).','The actual point source of the beam (focal spot).',['High atomic number (Z = 74)','Melting point above 3,000 °C'],'Over 99% of the energy becomes heat; overload pits the target and lowers output.'],
+rotor:['Rotor','A copper cylinder on the anode stem inside the vacuum.','Spins the anode disc.','The stator’s rotating magnetic field induces currents in the rotor (induction motor), turning it without contact through the glass.','Allows high-power exposures by spreading heat.',['3,000–10,000 rpm','Solid-lubricant bearings'],'Wait for the “ready” signal; the rotor needs a moment to reach speed.'],
+stator:['Stator','Electromagnet coils outside the vacuum envelope, around the rotor.','Drives the rotor.','Alternating current in the coils creates a rotating magnetic field that induces rotation in the rotor.','Enables the rotating anode.',['Induction-motor principle','Sits in the housing’s oil bath']],
+envelope:['Vacuum Envelope','A sealed glass or metal-ceramic vessel under high vacuum.','Holds the electrodes in vacuum and insulates them.','The vacuum stops electrons colliding with gas and keeps the filament from burning; a thin window lets X-rays out.','Lets electrons reach the target undisturbed.',['Pyrex glass or metal–ceramic','Thin window for the beam'],'Thermal shock can crack glass: avoid high-power exposures from cold.'],
+collimator:['Collimator','A lead-shutter device below the tube window.','Shapes and limits the X-ray field to the region of interest.','Adjustable lead leaves close in on the beam; a lamp and mirror project a light field showing the beam on the patient. Added filtration removes low-energy photons.','Reduces patient dose and scatter, improving contrast.',['Light field must match X-ray field (within 2% of SID)','Minimum total filtration about 2.5 mm Al'],'Collimate to the area of interest (ALARA).'],
+tubestand:['Tube Stand (Ceiling Suspension)','Ceiling rails and a telescopic column carrying the tube head.','Positions the tube over the patient and detector.','Carriages travel along the rails in two directions; a counterbalanced column moves vertically and rotates; electromagnetic brakes lock the position.','Sets the source-to-image distance (SID) and beam angle.',['Typical SID 100–180 cm','Column rotation about ±180°'],'Check brakes before exposure; keep cables and hands clear of moving parts.'],
+bucky:['Vertical Bucky (Wall Stand)','A floor-standing upright stand with a height-adjustable detector holder.','Holds the detector for erect examinations such as chest imaging.','A counterbalanced carriage slides along the column; the housing holds the flat panel, an anti-scatter grid and automatic exposure control chambers.','Gives stable, aligned imaging for standing patients.',['Vertical travel about 30–180 cm','Grid e.g. 12:1, 40 lines/cm'],'Ensure the patient is stable and the carriage is locked.'],
+panel:['Flat Panel Detector','A thin digital receptor: a scintillator over an amorphous-silicon TFT array.','Captures the X-ray pattern and converts it into a digital signal.','Indirect type: CsI scintillator turns X-rays into light, photodiodes into charge, and TFT switches read each pixel. Direct type: amorphous selenium converts X-rays straight to charge.','Replaces film and cassettes with an instant digital image.',['Typically 43 × 43 cm','Pixel pitch 100–150 µm, 14–16 bit','Wired or wireless designs'],'Fragile and costly: avoid drops, liquids and point pressure.'],
+table:['Patient Table','A radiolucent carbon-fibre tabletop on a stable pedestal.','Supports the patient during imaging.','The top floats on rails and may adjust in height; electromagnetic locks hold it. Carbon fibre absorbs very little radiation.','Positions the patient between the tube and the table detector.',['Load capacity commonly 200 kg or more','Height roughly 50–90 cm'],'Lock the top before transfers; watch for pinch points.'],
+tabledet:['Table Detector','A flat panel in a tray beneath the tabletop.','Records images of patients lying on the table.','The beam crosses the patient and tabletop, passes the grid and hits the detector, exactly as in the wall stand.','Receives the exposure for supine exams such as abdomen and extremities.',['Same flat-panel technology as the wall stand','Lead backing reduces back-scatter'],'Do not load or knock the detector tray.'],
+generator:['X-Ray Generator','A high-frequency power cabinet that supplies the tube.','Produces and controls the high voltage and filament current.','Mains power is rectified, converted to high frequency, stepped up to 40–150 kV and smoothed to near-constant DC; timers or AEC end the exposure.','Sets the kVp, mA and time of every exposure.',['Typical power 30–80 kW','Very low voltage ripple'],'Contains lethal voltages: only trained engineers may service it.'],
+console:['Control Console','The operator workstation behind a lead-glass screen.','Sets exposure factors, triggers exposures and processes images.','The operator selects an exam program (kVp, mAs, SID); a two-step handswitch spins up the anode then fires the exposure; the corrected image appears within seconds.','The control and review point of the whole system.',['Anatomical programs (APR)','DICOM output to PACS'],'Stay behind the protective screen during exposure.'],
+cables:['High-Voltage Cables','Heavily insulated, shielded cables from generator to tube.','Carry the high voltage and filament current to the tube.','Multi-layer insulation and a grounded braid contain 40–150 kV safely.','The power link between generator and tube.',['Flexible, shielded construction'],'Never bend sharply or disconnect under power.']};
+const MENU=[['tube','X-ray Tube'],['cathode','Cathode'],['anode','Anode'],['target','Target'],['collimator','Collimator'],['tubestand','Tube Stand'],['bucky','Vertical Bucky'],['panel','Flat Panel Detector'],['table','Patient Table'],['tabledet','Table Detector'],['generator','X-ray Generator'],['console','Control Console']],
+MORE=[['filament','Filament'],['cup','Focusing Cup'],['rotor','Rotor'],['stator','Stator'],['envelope','Vacuum Envelope'],['cables','HV Cables']];
+// ---------- renderer / scene
+const R=$('#cv'),ren=new THREE.WebGLRenderer({canvas:R,antialias:true});__D.ren=1;
+ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.outputEncoding=THREE.sRGBEncoding;ren.toneMappingExposure=.8;
+const sc=new THREE.Scene();__D.scene=1;sc.background=new THREE.Color(0x838b94);sc.fog=new THREE.Fog(0x838b94,16,42);
+const cam=new THREE.PerspectiveCamera(40,1,.05,100);
+const pm=new THREE.PMREMGenerator(ren),es=new THREE.Scene();
+es.add(new THREE.Mesh(new THREE.BoxGeometry(20,10,20),new THREE.MeshBasicMaterial({color:0x6e7781,side:THREE.BackSide})));
+[[0,4.8,0,8,.2,8],[-9,2,0,.2,5,8],[9,2,3,.2,5,6],[0,2,-9,10,5,.2]].forEach(a=>{const m=new THREE.Mesh(new THREE.BoxGeometry(a[3],a[4],a[5]),new THREE.MeshBasicMaterial({color:new THREE.Color(1,1,1).multiplyScalar(1.5)}));m.position.set(a[0],a[1],a[2]);es.add(m)});
+try{sc.environment=pm.fromScene(es,.02).texture}catch(e){__D.errs.push('Environment map skipped: '+e.message)}
+sc.add(new THREE.HemisphereLight(0xcfd8e3,0x59616b,.2));
+const dl=new THREE.DirectionalLight(0xfff6ea,1.25);dl.position.set(3.5,5.5,4.5);dl.castShadow=true;dl.shadow.mapSize.set(innerWidth<800?1024:2048,innerWidth<800?1024:2048);Object.assign(dl.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:1,far:20});dl.shadow.bias=-.0005;dl.shadow.normalBias=.02;dl.shadow.radius=3;sc.add(dl);
+const fl0=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x9da5ae,roughness:.6,metalness:0}));fl0.rotation.x=-PI/2;fl0.receiveShadow=true;sc.add(fl0);
+const fl1=new THREE.Mesh(new THREE.CircleGeometry(4.6,64),new THREE.MeshStandardMaterial({color:0xb9c0c7,roughness:.5}));fl1.rotation.x=-PI/2;fl1.position.y=.002;fl1.receiveShadow=true;sc.add(fl1);
+// ---------- helpers
+const E={},pk=[],fade=[],EX=[];
+const M=(c,m,r,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,metalness:m,roughness:r},o));
+const W=()=>M(0xb4b8bb,.05,.5),ST=()=>M(0x868d95,.9,.4),DK=()=>M(0x1a1d21,.3,.55),LD=()=>M(0x4b5159,.8,.35);
+const bx=(w,h,d)=>new THREE.BoxGeometry(w,h,d),cy=(a,b,h,s=32,o=false)=>new THREE.CylinderGeometry(a,b,h,s,1,o),tor=(r,t,s=40)=>new THREE.TorusGeometry(r,t,10,s);
+const mk=(p,g,m,x,y,z,rx,ry,rz)=>{const o=new THREE.Mesh(g,m.clone());o.position.set(x||0,y||0,z||0);o.rotation.set(rx||0,ry||0,rz||0);o.castShadow=o.receiveShadow=true;o.userData.be=o.material.emissive.clone();o.userData.bi=o.material.emissiveIntensity;p.add(o);pk.push(o);return o};
+const gr=(id,par,ex,x,y,z)=>{const g=new THREE.Group();g.position.set(x||0,y||0,z||0);if(id){g.userData.id=id;E[id]=g}if(ex)g.userData.ex=V(...ex);par.add(g);return g};
+const FW=1.862,FY=-.058;
+// ---------- X-ray tube (local coords, group origin = tube centre)
+const tube=gr('tube',sc,[0,.55,0],0,1.92,0);
+const hs=gr(null,tube,[0,.5,0]),hm=M(0xb4b8bb,.05,.5,{transparent:true}),hd=M(0x1a1d21,.3,.55,{transparent:true});
+mk(hs,bx(.74,.3,.3),hm,.05,0,0);mk(hs,cy(.045,.045,.07),hd,-.355,0,0,0,0,PI/2);mk(hs,cy(.05,.05,.07),hd,.455,0,0,0,0,PI/2);mk(hs,cy(.05,.05,.012),hd,0,-.153,0);
+for(let i=0;i<6;i++)mk(hs,bx(.02,.04,.26),hm,-.2+i*.09,.17,0);
+hs.traverse(o=>o.isMesh&&fade.push(o.material));
+const ev=gr('envelope',tube,[0,.26,0]);mk(ev,cy(.1,.1,.58),M(0xbfe3ff,0,.05,{transparent:true,opacity:.22,depthWrite:false,side:THREE.DoubleSide}),.05,0,0,0,0,PI/2);
+const ca=gr('cathode',tube,[-.3,0,0]),cu=gr('cup',ca,[0,.13,.13]),fi=gr('filament',ca,[0,-.12,-.1]);
+mk(cu,cy(.034,.034,.05,24,true),M(0x9aa3ad,1,.3,{side:THREE.DoubleSide}),-.19,FY,0,0,0,PI/2);
+mk(fi,tor(.012,.003,20),M(0xff9a3c,.3,.4,{emissive:0xff5a00,emissiveIntensity:.8}),-.185,FY,0,0,PI/2,0);
+[-1,1].forEach(s=>mk(ca,cy(.006,.006,.1),M(0xb87333,1,.3),-.265,FY+s*.015,0,0,0,PI/2));
+const an=gr('anode',tube,[.22,0,0]),ta=gr('target',an,[0,-.15,0]);
+mk(an,cy(.07,.055,.045,48),M(0x5a6068,.9,.35),.0225,0,0,0,0,PI/2);mk(an,cy(.012,.012,.17),ST(),.13,0,0,0,0,PI/2);
+mk(ta,tor(.058,.011,64),M(0xdadfe6,1,.2),-.002,0,0,0,PI/2,0);
+const ro=gr('rotor',tube,[.2,0,0]),stt=gr('stator',tube,[.15,-.22,0]);
+mk(ro,cy(.042,.042,.13),M(0xb87333,1,.3),.27,0,0,0,0,PI/2);
+[.23,.27,.31].forEach(x=>mk(stt,tor(.106,.016),M(0x8a5a2b,.8,.4),x,0,0,0,PI/2,0));
+// ---------- collimator
+const co=gr('collimator',sc,[0,.1,0]);
+mk(co,bx(.3,.12,.3),W(),0,1.695,0);mk(co,bx(.3,.02,.3),DK(),0,1.625,0);mk(co,cy(.015,.015,.06),ST(),.18,1.7,0,0,0,PI/2);
+[-1,1].forEach(s=>{mk(co,bx(.03,.012,.2),LD(),s*.055,1.612,0);mk(co,bx(.2,.012,.03),LD(),0,1.6,s*.055)});
+// ---------- tube stand
+const ts=gr('tubestand',sc,[0,.25,0]);
+[-1,1].forEach(s=>mk(ts,bx(5.6,.1,.12),ST(),0,2.95,s*.55));
+mk(ts,bx(5.8,.03,1.5),M(0xdfe4e9,.1,.6,{transparent:true,opacity:.35}),0,3.02,0);
+const c1=gr(null,ts),c2=gr(null,ts);mk(c1,bx(.16,.1,1.2),W(),0,2.85,0);mk(c2,bx(.36,.2,.36),W(),0,2.72,0);mk(c2,cy(.09,.09,.45),ST(),0,2.4,0);const colIn=mk(c2,cy(.065,.065,.36),M(0x5b626b,.9,.3),0,2.25,0);mk(c2,cy(.11,.11,.04),DK(),0,2.17,0);mk(c2,cy(.12,.12,.03),DK(),0,2.62,0);
+// ---------- patient table
+const tb=gr('table',sc);
+mk(tb,bx(2,.08,.7),W(),0,.85,0);[-1,1].forEach(s=>mk(tb,bx(1.9,.025,.025),ST(),0,.9,s*.34));
+mk(tb,bx(.4,.69,.45),W(),-.7,.465,0);mk(tb,bx(.9,.12,.6),W(),-.7,.06,0);
+const td=gr('tabledet',sc,[0,-.25,.85]);
+mk(td,bx(.5,.03,.5),DK(),0,.745,0);mk(td,bx(.43,.022,.43),M(0x20324a,.6,.25),0,.772,0);mk(td,bx(.43,.004,.04),W(),0,.785,.2);
+// ---------- vertical bucky + panel
+const bk=gr('bucky',sc,[.45,0,0]);
+mk(bk,bx(.7,.08,.9),ST(),1.95,.04,0);mk(bk,bx(.14,2.1,.2),W(),2.05,1.09,0);const bh=gr(null,bk);mk(bh,bx(.16,.7,.46),W(),1.93,1.25,0);mk(bh,bx(.13,.58,.58),W(),1.8,1.25,0);mk(bh,bx(.04,.04,.4),ST(),1.715,1.58,0);
+const pa=gr('panel',sc,[-.55,0,0]);
+mk(pa,bx(.02,.45,.45),M(0x1c2a3c,.7,.2),1.725,1.25,0);mk(pa,bx(.005,.4,.4),M(0x2d6ca8,.3,.3,{emissive:0x0a2a50}),1.712,1.25,0);
+// ---------- generator + cables
+const ge=gr('generator',sc,[-.5,0,-.4]);
+mk(ge,bx(.7,1.5,.5),W(),-2.6,.75,-1.4);mk(ge,bx(.74,.06,.54),DK(),-2.6,.03,-1.4);mk(ge,bx(.5,.3,.012),DK(),-2.6,1.2,-1.144);
+mk(ge,bx(.18,.07,.012),M(0x0b3d2e,.2,.3,{emissive:0x00aa66,emissiveIntensity:.8}),-2.5,1.2,-1.137);
+for(let i=0;i<3;i++)mk(ge,bx(.03,.03,.01),M(0x22cc66,.2,.3,{emissive:0x22cc66,emissiveIntensity:1}),-2.78+i*.05,1.2,-1.137);
+for(let i=0;i<6;i++)mk(ge,bx(.5,.012,.012),DK(),-2.6,.4+i*.05,-1.144);
+const cb=gr('cables',sc);
+mk(cb,new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[-1.7,1.5,-1.4],[-1.7,2.4,-1.4],[-1.3,2.88,-.9],[-.8,2.9,-.3],[-.1,2.78,.25],[0,2.4,.25],[-.25,2.1,.2],[-.42,1.95,.02],[-.4,1.92,0]].map(p=>V(...p))),90,.03,8),DK(),0,0,0);
+// ---------- console
+const cs=gr('console',sc,[-.6,0,.5]);
+mk(cs,bx(1.2,.04,.6),W(),-2.6,.75,1);mk(cs,bx(.04,.75,.5),W(),-3.15,.375,1);mk(cs,bx(.04,.75,.5),W(),-2.05,.375,1);mk(cs,bx(1.1,.7,.03),W(),-2.6,.4,.72);
+mk(cs,bx(.55,.34,.03),DK(),-2.6,1.13,.9,-.12);mk(cs,cy(.025,.04,.2),ST(),-2.6,.87,.9);mk(cs,bx(.4,.015,.14),DK(),-2.6,.78,1.15);
+mk(cs,bx(1.4,1.15,.03),M(0x8fd3b0,0,.1,{transparent:true,opacity:.28}),-2.6,1.35,.5);[-1,1].forEach(s=>mk(cs,bx(.04,1.15,.04),ST(),-2.6+s*.7,1.35,.5));mk(cs,bx(1.44,.04,.04),ST(),-2.6,1.94,.5);
+// canvas textures
+const cvT=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t};
+const radi=(g,w,h)=>{g.fillStyle='#0d1115';g.fillRect(0,0,w,h);const el=(x,y,a,b,c)=>{g.fillStyle=c;g.beginPath();g.ellipse(x*w,y*h,a*w,b*h,0,0,7);g.fill()};
+el(.5,.5,.4,.46,'#6b747c');el(.3,.42,.15,.28,'#1c2228');el(.7,.42,.15,.28,'#1c2228');g.fillStyle='#b8c0c6';g.fillRect(.47*w,.08*h,.06*w,.84*h);el(.58,.6,.1,.11,'#a7b0b7');
+g.strokeStyle='#c9d0d5';g.lineWidth=Math.max(2,w/80);for(let i=0;i<7;i++){const y=(.22+i*.065)*h;[-1,1].forEach(s=>{g.beginPath();g.moveTo(.5*w,y);g.quadraticCurveTo((.5+s*.22)*w,y-.04*h,(.5+s*.36)*w,y+.1*h);g.stroke()})}
+g.beginPath();g.moveTo(.1*w,.14*h);g.lineTo(.9*w,.14*h);g.stroke()};
+const idle=cvT(320,190,(g,w,h)=>{g.fillStyle='#0c1b2a';g.fillRect(0,0,w,h);g.fillStyle='#4fb3ff';g.font='bold 20px sans-serif';g.fillText('DR CONSOLE',16,34);g.fillStyle='#9fb6c9';g.font='14px sans-serif';g.fillText('Exam: CHEST PA',16,70);g.fillText('120 kVp   200 mA   10 ms',16,96);g.fillStyle='#2ecc71';g.fillText('● READY',16,150)});
+const radM=cvT(320,190,radi),radT=cvT(256,320,radi);
+const scr=new THREE.Mesh(new THREE.PlaneGeometry(.5,.29),new THREE.MeshBasicMaterial({map:idle}));scr.position.set(-2.6,1.13,.917);scr.rotation.x=-.12;cs.add(scr);
+// ---------- process objects
+const pbm=(o)=>new THREE.MeshBasicMaterial({color:0xffd54a,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const bw=new THREE.Mesh(new THREE.ConeGeometry(.45,.5,40,1,true),pbm(.25));bw.position.set(0,FW-.25,0);
+const bf=new THREE.Mesh(new THREE.ConeGeometry(.27,1.08,4,1,true),pbm(.22));bf.rotation.y=PI/4;bf.position.set(0,FW-.54,0);
+const fl=new THREE.Mesh(new THREE.SphereGeometry(.03,16,16),new THREE.MeshBasicMaterial({color:0xff8a1f}));fl.position.set(0,FW,0);
+const pat=new THREE.Group(),sk=new THREE.MeshStandardMaterial({color:0xe2b49a,transparent:true,opacity:.6,roughness:.7});
+const tr=new THREE.Mesh(new THREE.SphereGeometry(1,32,20),sk);tr.scale.set(.5,.115,.25);tr.position.set(0,1,0);const hd2=new THREE.Mesh(new THREE.SphereGeometry(.1,24,16),sk);hd2.position.set(-.66,.99,0);pat.add(tr,hd2);
+const img=new THREE.Mesh(new THREE.PlaneGeometry(.45,.56),new THREE.MeshBasicMaterial({map:radT,side:THREE.DoubleSide}));img.position.set(-1.45,1.55,.9);
+[bw,bf,fl,pat,img].forEach(o=>{o.visible=false;sc.add(o)});
+const ep=[],pp=[],sg=new THREE.SphereGeometry(.012,8,8),em=new THREE.MeshBasicMaterial({color:0x4aa8ff}),phm=new THREE.MeshBasicMaterial({color:0xffe066});
+for(let i=0;i<36;i++){const m=new THREE.Mesh(sg,em);m.visible=false;sc.add(m);ep.push({m,t:Math.random()})}
+for(let i=0;i<90;i++){const m=new THREE.Mesh(sg,phm);m.visible=false;sc.add(m);pp.push({m,on:false,v:V(0,0,0),ab:false})}
+// registry
+sc.traverse(o=>{if(o.userData.ex){o.userData.home=o.position.clone();EX.push(o)}});
+pk.forEach(o=>{o.userData.ids=[];for(let p=o.parent;p;p=p.parent)if(p.userData.id)o.userData.ids.push(p.userData.id)});
+// ---------- state, highlight
+__D.machine=pk.length>100?1:0;
+let sel=null,hov=null,pid='',exp={t:0,g:0},edu=false;
+const BL=new THREE.Color(0x2b7bff),AM=new THREE.Color(0xff9a1f),LB=new THREE.Color(0x6fb0ff),INT=['cathode','cup','filament','anode','target','rotor','stator','envelope'];
+function hl(){pk.forEach(o=>{const m=o.material,u=o.userData;let c=u.be,i=u.bi;if(u.ids.includes(sel)){c=BL;i=.55}else if(pid&&u.ids.includes(pid)){c=AM;i=.6}else if(hov&&u.ids.includes(hov)){c=LB;i=.3}m.emissive.copy(c);m.emissiveIntensity=i});
+document.querySelectorAll('.mi').forEach(b=>b.classList.toggle('on',b.dataset.id===sel))}
+// ---------- camera
+const cur={t:V(0,1.1,0),r:8,th:.6,ph:1.2},goal={t:V(0,1.1,0),r:8,th:.6,ph:1.2};
+function home(){cam.fov=cam.aspect<1?50:38;cam.updateProjectionMatrix();const t=Math.tan(cam.fov*PI/360);goal.t.set(.2,cam.aspect<1?1.55:1.4,0);goal.r=Math.max(2.75/(t*cam.aspect),2.1/t);goal.th=.72;goal.ph=1.32}
+function size(){ren.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();home();cur.t.copy(goal.t);cur.r=goal.r;cur.th=goal.th;cur.ph=goal.ph;
+const rc=new THREE.Raycaster(),mp=new THREE.Vector2();
+function at(x,y){const b=R.getBoundingClientRect();mp.set((x-b.left)/b.width*2-1,-((y-b.top)/b.height)*2+1);rc.setFromCamera(mp,cam);const h=rc.intersectObjects(pk,false),a=h.find(q=>q.object.material.opacity>=.5)||h[0];return a?a.object.userData.ids[0]:null}
+const P=new Map();let dn=null,moved=0,mx=0,my=0,mon=false;
+function pan(dx,dy){const s=2*goal.r*Math.tan(20*PI/180)/innerHeight,rx=V(0,0,0).setFromMatrixColumn(cam.matrixWorld,0),uy=V(0,0,0).setFromMatrixColumn(cam.matrixWorld,1);goal.t.addScaledVector(rx,-dx*s).addScaledVector(uy,dy*s)}
+R.addEventListener('contextmenu',e=>e.preventDefault());R.addEventListener('webglcontextlost',e=>{e.preventDefault();__D.errs.push('WebGL context lost');window.showDiag('WebGL context was lost (memory pressure). Close other tabs/apps and reload.')});
+R.addEventListener('pointerdown',e=>{if(window.patientDown&&patientDown(e))return;R.setPointerCapture(e.pointerId);P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(P.size===1){dn={x:e.clientX,y:e.clientY,t:performance.now()};moved=0}else moved=99});
+R.addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY;mon=e.pointerType==='mouse';if(window.patientMove&&patientMove(e))return;const p=P.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;
+if(P.size===1){moved+=Math.abs(dx)+Math.abs(dy);if(e.buttons&6||e.shiftKey)pan(dx,dy);else{goal.th-=dx*.006;goal.ph=cl(goal.ph-dy*.006,.1,1.62)}}
+else if(P.size===2){const o=[...P.entries()].find(([k])=>k!==e.pointerId)[1],d0=Math.hypot(p.x-o.x,p.y-o.y),d1=Math.hypot(e.clientX-o.x,e.clientY-o.y);goal.r=cl(goal.r*d0/Math.max(d1,1),.4,24);pan(dx/2,dy/2)}
+p.x=e.clientX;p.y=e.clientY});
+const up=e=>{if(window.patientUp&&patientUp(e))return;P.delete(e.pointerId);if(P.size===0&&dn&&moved<6&&performance.now()-dn.t<600&&e.type==='pointerup'){const id=at(e.clientX,e.clientY);if(id)select(id);else closeInfo()}if(P.size===0)dn=null};
+R.addEventListener('pointerup',up);R.addEventListener('pointercancel',up);R.addEventListener('pointerleave',()=>{mon=false;$('#tip').style.display='none'});
+R.addEventListener('wheel',e=>{e.preventDefault();goal.r=cl(goal.r*Math.exp(e.deltaY*.0012),.4,24)},{passive:false});
+// ---------- info + menu
+const mm=$('#menu');mm.innerHTML=MENU.map(m=>`<button class="mi" data-id="${m[0]}">${m[1]}</button>`).join('')+'<h3>Tube internals & more</h3>'+MORE.map(m=>`<button class="mi" data-id="${m[0]}">${m[1]}</button>`).join('');
+mm.onclick=e=>{const b=e.target.closest('.mi');if(b){select(b.dataset.id);mm.classList.remove('open')}};
+$('#mt').onclick=()=>mm.classList.toggle('open');
+function showInfo(id){const d=D[id];$('#info').innerHTML=`<button id="x">✕</button><h2>${d[0]}</h2><p>${d[1]}</p><h4>Function</h4><p>${d[2]}</p>${d[7]?'<h4>Main parts</h4><ul>'+d[7].map(s=>`<li>${s}</li>`).join('')+'</ul>':''}<h4>How it works</h4><p>${d[3]}</p><h4>Role in X-ray imaging</h4><p>${d[4]}</p><h4>Technical information</h4><ul>${d[5].map(s=>`<li>${s}</li>`).join('')}</ul>${d[6]?`<h4>Safety</h4><p class="safe">${d[6]}</p>`:''}`;$('#info').classList.add('show');$('#info').scrollTop=0}
+$('#info').onclick=e=>{if(e.target.id==='x')closeInfo()};
+function closeInfo(){sel=null;$('#info').classList.remove('show');hl()}
+function select(id){if(!E[id])return;if(proc.on)stopProc();sel=id;showInfo(id);hl();const b=new THREE.Box3().setFromObject(E[id]);goal.t.copy(b.getCenter(V(0,0,0)));goal.r=cl(b.getSize(V(0,0,0)).length()*1.7+.45,.6,20)*Math.max(1,.9/cam.aspect)}
+// ---------- buttons
+$('#br').onclick=home;
+$('#be').onclick=e=>{edu=!edu;e.currentTarget.classList.toggle('on',edu);$('#lbls').classList.toggle('on',edu);$('#arrows').style.display=edu?'':'none'};
+$('#arrows').style.display='none';
+$('#bx').onclick=e=>{exp.g=exp.g?0:1;if(exp.g){if(proc.on)stopProc();if(window.onExplode)onExplode();goal.t.set(-.2,1.5,0);goal.r=9*Math.max(1,1.2/cam.aspect)}e.currentTarget.classList.toggle('on',!!exp.g)};
+// ---------- educational labels
+const LBL=[['tube',0,-95],['cathode',-135,-35],['anode',135,-40],['target',120,50],['collimator',-125,55],['tubestand',110,-110],['bucky',60,-95],['panel',-70,75],['table',-40,100],['tabledet',-130,95],['generator',0,-95],['console',0,-90]].map(a=>{const el=document.createElement('div');el.className='lbl';el.textContent=D[a[0]][0].replace(/ \(.*\)/,'');el.onclick=()=>select(a[0]);$('#lbls').appendChild(el);
+const ln=document.createElementNS('http://www.w3.org/2000/svg','line');$('#arrows').appendChild(ln);return{id:a[0],dx:a[1],dy:a[2],el,ln}});
+const bb=new THREE.Box3(),tv=V(0,0,0);
+function labels(){if(!edu)return;const Wd=innerWidth,H=innerHeight;LBL.forEach(l=>{bb.setFromObject(E[l.id]).getCenter(tv).project(cam);const x=(tv.x*.5+.5)*Wd,y=(-tv.y*.5+.5)*H,v=tv.z<1;l.el.style.display=l.ln.style.display=v?'':'none';l.el.style.left=x+l.dx+'px';l.el.style.top=y+l.dy+'px';l.ln.setAttribute('x1',x+l.dx);l.ln.setAttribute('y1',y+l.dy);l.ln.setAttribute('x2',x);l.ln.setAttribute('y2',y)})}
+// ---------- X-ray production mode
+const proc={on:false,step:0,t:0,auto:true};let acc=0;
+const ST8=[['Electrons are released','The filament is heated and electrons boil off the cathode (thermionic emission).'],['Electrons are accelerated','The high voltage (kVp) between cathode and anode accelerates the electron stream toward the anode.'],['Electrons strike the target','Electrons hit the tungsten target at the focal spot; over 99% of their energy becomes heat.'],['X-rays are produced','Sudden deceleration (bremsstrahlung) and inner-shell interactions create X-ray photons that exit through the tube window.'],['The collimator shapes the beam','Lead leaves limit the field to the area of interest, reducing dose and scatter.'],['X-rays pass through the patient','Tissues attenuate the beam differently: bone absorbs more than lung or soft tissue, so some photons are absorbed.'],['The flat-panel detector receives the X-rays','The scintillator and TFT array convert the transmitted X-rays into electrical signals, pixel by pixel.'],['The detector produces a digital image','The signals are digitized and processed; the radiograph appears on the console monitor within seconds.']];
+const CAMS=[[-.05,1.88,0,1.2,.25],[-.05,1.88,0,1.2,.25],[-.05,1.88,0,1.2,.25],[0,1.75,0,2.4,.45],[0,1.7,0,2.8,.45],[0,1.2,0,3.4,.6],[0,.95,0,2.6,.6],[-1.2,1.25,.6,5,.35]];
+function go(i){proc.step=(i+8)%8;proc.t=0;const s=proc.step;
+bw.visible=s==3;bf.visible=s>=4;pat.visible=s>=5;img.visible=s==7;fl.visible=s==2||s==3;pid=['cathode','anode','target','','collimator','','tabledet','console'][s];
+scr.material.map=s==7?radM:idle;pp.forEach(p=>{p.on=false;p.m.visible=false});hl();
+const c=CAMS[s];goal.t.set(c[0],c[1],c[2]);goal.r=c[3]*Math.max(1,.9/cam.aspect);goal.th=c[4];
+$('#cap').innerHTML=`<b>Step ${s+1}/8 — ${ST8[s][0]}</b><div>${ST8[s][1]}</div><div class="cb"><button data-a="p">◀</button>${ST8.map((_,k)=>`<span class="d${k==s?' a':''}"></span>`).join('')}<button data-a="n">▶</button><button data-a="a">${proc.auto?'Pause':'Play'}</button></div>`}
+$('#cap').onclick=e=>{const a=e.target.closest('button');if(!a)return;const k=a.dataset.a;if(k=='p')go(proc.step-1);else if(k=='n')go(proc.step+1);else{proc.auto=!proc.auto;go(proc.step)}};
+function startProc(){if(window.onProcStart)onProcStart();exp.g=0;$('#bx').classList.remove('on');closeInfo();proc.on=true;proc.auto=true;$('#bp').classList.add('on');$('#cap').style.display='block';$('#hint').style.display='none';go(0)}
+function stopProc(){if(window.onProcStop)onProcStop();proc.on=false;$('#bp').classList.remove('on');$('#cap').style.display='none';$('#hint').style.display='';[bw,bf,fl,pat,img].forEach(o=>o.visible=false);ep.concat(pp).forEach(p=>p.m.visible=false);scr.material.map=idle;pid='';hl()}
+$('#bp').onclick=()=>proc.on?stopProc():startProc();
+// ---------- loop
+let last=performance.now(),hc=0;
+function loop(now){window.__f=1;requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.1);last=now;const k=1-Math.exp(-dt*8),T=now/1000;
+cur.t.lerp(goal.t,k);cur.r+=(goal.r-cur.r)*k;cur.th+=(goal.th-cur.th)*k;cur.ph+=(goal.ph-cur.ph)*k;
+cam.position.set(cur.t.x+cur.r*Math.sin(cur.ph)*Math.sin(cur.th),cur.t.y+cur.r*Math.cos(cur.ph),cur.t.z+cur.r*Math.sin(cur.ph)*Math.cos(cur.th));cam.lookAt(cur.t);
+exp.t+=(exp.g-exp.t)*(1-Math.exp(-dt*3.5));const e=exp.t<.002?0:exp.t>.998?1:exp.t;EX.forEach(o=>o.position.copy(o.userData.home).addScaledVector(o.userData.ex,e));
+const fg=(exp.g||window.xFade||(proc.on&&proc.step<=3)||INT.includes(sel))?.12:1;fade.forEach(m=>{m.opacity+=(fg-m.opacity)*.15;m.depthWrite=m.opacity>.98});
+if(mon&&!dn&&++hc%3==0){const id=at(mx,my);if(id!==hov){hov=id;hl()}const t=$('#tip');if(id){t.textContent=D[id][0];t.style.display='block';t.style.left=mx+14+'px';t.style.top=my+14+'px'}else t.style.display='none'}
+if(proc.on){proc.t+=dt;if(proc.auto&&proc.t>6)go(proc.step+1);const s=proc.step;
+ep.forEach((q,i)=>{const m=q.m;if(s>3){m.visible=false;return}m.visible=true;if(s==0)m.position.set(-.2+Math.sin(T*5+i)*.018,FW+Math.cos(T*4+i*1.7)*.018,Math.sin(T*3+i*2.3)*.018);else{q.t+=dt*.7;if(q.t>1)q.t-=1;m.position.set(-.17+q.t*q.t*.166,FW+Math.sin(i*9+T*8)*.008*(1-q.t),Math.cos(i*7)*.008*(1-q.t))}});
+fl.scale.setScalar(1+.4*Math.sin(T*18));
+if(s>=3){acc+=dt*45;while(acc>=1){acc--;const p=pp.find(q=>!q.on);if(!p)break;const w=s==3?.7:.176;p.v.set((Math.random()*2-1)*w,-1,(Math.random()*2-1)*w).normalize().multiplyScalar(1.7);p.m.position.set(0,FW,0);p.on=true;p.ab=s>=5&&Math.random()<.5;p.m.visible=true}}
+pp.forEach(p=>{if(!p.on)return;p.m.position.addScaledVector(p.v,dt);const y=p.m.position.y;if(s==3?y<FW-.5:((p.ab&&y<1.1)||y<.79)){p.on=false;p.m.visible=false}})}
+labels();if(window.posLoop)posLoop(dt,T);ren.render(sc,cam);window.__D.frame=1}
+hl();requestAnimationFrame(loop);
+
+</script>
+<script>
+/* DR X-ray Simulator – positioning / centering / exposure module (extends app.js) */
+(()=>{
+if(typeof THREE==='undefined')return;
+const R2=PI/180,HX=1.715,DY=.783,qa=(x,y,z,a)=>new THREE.Quaternion().setFromAxisAngle(V(x,y,z),a),q$=s=>document.querySelector(s);
+const mk2=(p,...a)=>{const o=mk(p,...a);o.userData.ids=[];for(let q=o.parent;q;q=q.parent)if(q.userData.id)o.userData.ids.push(q.userData.id);return o};
+// ---------- environment: gray hospital room, contact shadows
+const wall=(w,h,x,y,z,ry,c)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({color:c,roughness:.95,metalness:0}));m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;sc.add(m)};
+wall(10,3.6,.3,1.8,-2.5,0,0x9ca4ad);wall(7,3.6,-3.5,1.8,.5,PI/2,0x949ca5);
+const strip=(w,h,d,x,y,z,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c,roughness:.7}));m.position.set(x,y,z);m.receiveShadow=true;sc.add(m)};
+strip(10,.12,.03,.3,.06,-2.49,0x3f454c);strip(10,.05,.03,.3,1.0,-2.49,0x7b838c);strip(.03,.12,7,-3.49,.06,.5,0x3f454c);strip(.03,.05,7,-3.49,1.0,.5,0x737b84);
+const blob=(x,z,w,d,a)=>{const t=cvT(64,64,g=>{const r=g.createRadialGradient(32,32,2,32,32,32);r.addColorStop(0,'rgba(0,0,0,'+a+')');r.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=r;g.fillRect(0,0,64,64)});const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}));m.rotation.x=-PI/2;m.position.set(x,.004,z);sc.add(m)};
+blob(-.7,0,1.8,1.3,.55);blob(0,0,3,1.7,.3);blob(1.95,0,1.6,1.7,.5);blob(-1.7+.0,-1.4,1.4,1.2,.55);blob(-1.7,1,1.9,1.6,.4);
+// ---------- rebuild the tube head as one pivoting assembly (tube + collimator + yoke)
+const head=new THREE.Group();head.position.set(0,FW,0);sc.add(head);
+head.add(tube);head.add(co);tube.position.y-=FW;co.position.y-=FW;tube.userData.home.y-=FW;co.userData.home.y-=FW;
+const yk=new THREE.Group();yk.userData.id='tubestand';head.add(yk);
+mk2(yk,cy(.05,.05,.42),DK(),0,.3,0,PI/2,0,0);[-1,1].forEach(s=>mk2(yk,bx(.07,.24,.03),DK(),0,.2,s*.2));mk2(yk,cy(.07,.07,.05),ST(),0,.33,0);
+[ge,cs].forEach(g=>{g.position.x=.9;g.userData.home.x=.9});
+mk2(E.table,bx(1.9,.03,.62),DK(),0,.905,0);mk2(E.table,cy(.24,.24,.03),DK(),-.7,.13,0);
+mk2(E.bucky,cy(.05,.05,.1),DK(),1.93,1.25,0,0,0,PI/2);
+// ---------- state
+const S={mode:'table',pos:'supine',px:0,pz:0,yaw:0,armFwd:false,tx:0,ty:FW,tz:0,tilt:0,dx:0,dh:1.25,cw:30,ch:30,ex:null,posOn:false,cen:false};
+let dirty=true;
+// ---------- procedural patient (standing frame: y up, face +z)
+function build(){const sk=new THREE.MeshStandardMaterial({color:0xc89b82,roughness:.72}),gw=new THREE.MeshStandardMaterial({color:0x5f86ab,roughness:.9}),hr=new THREE.MeshStandardMaterial({color:0x2b2420,roughness:.8}),dk=new THREE.MeshStandardMaterial({color:0x2b3037,roughness:.6});
+const pv=new THREE.Group(),root=new THREE.Group(),body=new THREE.Group();pv.add(root);root.add(body);
+const S1=new THREE.SphereGeometry(1,24,16),pt=(par,g,m,x,y,z,a,b,c)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);if(a)o.scale.set(a,b,c);o.castShadow=o.receiveShadow=true;par.add(o);return o};
+const sp=(par,m,x,y,z,a,b,c)=>pt(par,S1,m,x,y,z,a,b,c),lm=(par,m,l,r1,r2)=>pt(par,new THREE.CylinderGeometry(r1,r2,l,16),m,0,-l/2,0);
+const mkr={},mm=(n,par,x,y,z)=>{const o=new THREE.Object3D();o.position.set(x,y,z);par.add(o);mkr[n]=o};
+sp(body,gw,0,1.3,0,.17,.2,.1);sp(body,gw,0,1.1,0,.15,.14,.095);sp(body,gw,0,.95,0,.17,.11,.105);
+pt(body,new THREE.CylinderGeometry(.045,.05,.12,16),sk,0,1.54,0);sp(body,sk,0,1.66,.01,.085,.105,.095);sp(body,hr,0,1.69,-.015,.09,.1,.095);sp(body,sk,0,1.655,.098,.014,.02,.02);
+mm('chest',body,0,1.32,0);mm('abd',body,0,1.06,0);mm('pelvis',body,0,.93,0);mm('skull',body,0,1.66,0);mm('cspine',body,0,1.52,-.02);mm('lumbar',body,0,1.08,-.04);
+const legs=[],arms=[];
+[-1,1].forEach(s=>{const sg=new THREE.Group();sg.position.set(s*.2,1.45,0);body.add(sg);sp(sg,gw,0,0,0,.055,.055,.055);lm(sg,sk,.29,.045,.037);
+const eg=new THREE.Group();eg.position.y=-.29;sg.add(eg);sp(eg,sk,0,0,0,.037,.037,.037);lm(eg,sk,.26,.036,.028);
+const hg=new THREE.Group();hg.position.y=-.26;eg.add(hg);sp(hg,sk,0,-.07,0,.04,.08,.018);sg.rotation.z=s*.12;arms.push(sg);if(s>0)mm('hand',hg,0,-.07,0);
+const th=new THREE.Group();th.position.set(s*.085,.92,0);body.add(th);sp(th,gw,0,0,0,.075,.075,.075);lm(th,sk,.45,.075,.055);
+const kn=new THREE.Group();kn.position.y=-.45;th.add(kn);sp(kn,sk,0,0,0,.055,.055,.055);lm(kn,sk,.43,.05,.036);
+const an=new THREE.Group();an.position.y=-.43;kn.add(an);pt(an,new THREE.BoxGeometry(.085,.06,.22),dk,0,-.03,.05);
+legs.push({th,kn});if(s>0){mm('knee',kn,0,0,0);mm('foot',an,0,-.04,.06)}});
+const st=new THREE.Group();pt(st,new THREE.CylinderGeometry(.18,.18,.05,24),dk,0,.475,0);pt(st,new THREE.CylinderGeometry(.03,.03,.45,12),ST(),0,.25,0);pt(st,new THREE.CylinderGeometry(.22,.22,.03,24),dk,0,.015,0);pv.add(st);st.visible=false;
+return{pv,root,body,legs,arms,mk:mkr,st}}
+const P=build();sc.add(P.pv);const pBox=new THREE.Box3();
+function pose(){const p=S.pos;P.pv.position.set(S.px,0,S.pz);P.pv.rotation.y=S.yaw;P.st.visible=p==='sit';
+let q=new THREE.Quaternion(),o=V(0,0,0);
+if(p==='supine'){q=qa(0,1,0,PI/2).multiply(qa(1,0,0,-PI/2));o.set(1.1,1.02,0)}else if(p==='prone'){q=qa(0,1,0,-PI/2).multiply(qa(1,0,0,PI/2));o.set(1.1,1.02,0)}else if(p==='sit')o.set(0,0,-.1);
+P.root.quaternion.copy(q);P.root.position.copy(o);P.body.position.y=p==='sit'?-.38:0;
+P.legs.forEach(l=>{l.th.rotation.x=p==='sit'?-PI/2:0;l.kn.rotation.x=p==='sit'?PI/2:0});
+const fw=S.armFwd&&p==='sit';P.arms[1].rotation.x=fw?-1.37:0;P.arms[1].rotation.z=fw?0:.12;P.pv.updateMatrixWorld(true)}
+const mW=n=>P.mk[n].getWorldPosition(V(0,0,0));
+// ---------- geometry of the beam
+function geo(){const a=head.rotation.z,d=V(Math.sin(a),-Math.cos(a),0),F=head.position.clone();let H=null,C,sid;
+if(S.mode==='table'){C=V(S.dx,DY,0);sid=F.y-DY;if(d.y<-.2)H=F.clone().addScaledVector(d,sid/-d.y)}
+else{C=V(HX,S.dh,0);sid=HX-F.x;if(d.x>.2)H=F.clone().addScaledVector(d,sid/d.x)}
+return{d,F,H,C,sid}}
+// ---------- visualization objects
+const mkS=(c,r)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,16,12),new THREE.MeshBasicMaterial({color:c,depthTest:false,transparent:true,opacity:.95}));m.renderOrder=20;m.visible=false;sc.add(m);return m};
+const bar=(c,r)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,6),new THREE.MeshBasicMaterial({color:c,depthTest:false,transparent:true,opacity:.95}));m.renderOrder=19;m.visible=false;sc.add(m);return m};
+const mTube=mkS(0x3b8cff,.035),mDet=mkS(0x2ecc71,.035),mPat=mkS(0x19d3da,.03),mTgt=mkS(0xffd21f,.035),mHit=mkS(0xff3b30,.022),crL=bar(0xff3b30,.005),sidL=bar(0xffffff,.0035);
+const seg=(m,a,b)=>{const d=b.clone().sub(a),l=d.length();m.position.copy(a).addScaledVector(d,.5);m.scale.set(1,Math.max(l,.001),1);m.quaternion.setFromUnitVectors(V(0,1,0),d.normalize())};
+const fg2=new THREE.BufferGeometry();fg2.setAttribute('position',new THREE.BufferAttribute(new Float32Array(15),3));fg2.setIndex([0,1,2,0,2,3,0,3,4,0,4,1]);
+const fld=new THREE.Mesh(fg2,new THREE.MeshBasicMaterial({color:0xffd54a,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));fld.frustumCulled=false;fld.visible=false;sc.add(fld);
+const fo=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([V(0,0,0),V(0,0,0),V(0,0,0),V(0,0,0)]),new THREE.LineBasicMaterial({color:0xffd54a}));fo.frustumCulled=false;fo.visible=false;sc.add(fo);
+const hud=document.createElement('div');hud.id='hud';document.body.appendChild(hud);
+const HC=['#3b8cff','#1fa855','#12a9b0','#c79a00','#e0352b','#6a737d'],HL=HC.map(c=>{const d=document.createElement('div');d.className='hl';d.style.background=c;hud.appendChild(d);return d});let hp=[],ht=[];
+// ---------- evaluation
+function evalA(){const g=geo(),e=S.ex,T=mW(e?e.t:'chest'),it=[];
+if(e){const dA=((S.yaw/R2-e.y)%360+540)%360-180,ok=S.pos===e.p&&Math.abs(dA)<25;it.push(['Patient position',ok,'use '+e.p+' position, facing '+e.y+'° (now '+Math.round(S.yaw/R2)+'°)'])}
+const hd=g.H?g.H.distanceTo(g.C):9;it.push(['Tube / detector alignment',(!e||S.mode===e.d)&&hd<.03,(e&&S.mode!==e.d?'switch to the '+e.d+' detector':'beam misses detector centre by '+(hd>5?'—':Math.round(hd*100)+' cm'))]);
+const cd=new THREE.Ray(g.F,g.d).distanceToPoint(T),ang=Math.abs(S.tilt-(e?e.tilt:0));it.push(['Central ray on anatomy',cd<.035&&ang<=5,(ang>5?'set tube angle to '+(e?e.tilt:0)+'°':'ray is '+Math.round(cd*100)+' cm off the target')]);
+if(e){it.push(['SID',Math.abs(g.sid-e.sid/100)<=.1,'set SID to '+e.sid+' cm (now '+Math.round(g.sid*100)+')']);it.push(['Collimation',Math.abs(S.cw-e.cw)<=4&&Math.abs(S.ch-e.ch)<=4,'use about '+e.cw+'×'+e.ch+' cm'])}
+return{it,ok:it.every(i=>i[1]),g,T,cd}}
+// ---------- update everything
+function update(){pose();const a=(S.mode==='wall'?PI/2:0)+S.tilt*R2;head.rotation.z=a;head.position.set(S.tx,S.ty,S.tz);
+const ax=S.tx-.33*Math.sin(a),ay=S.ty+.33*Math.cos(a),len=Math.max(.06,2.5-ay);head.updateMatrixWorld(true);if(window.standUpdate)standUpdate(ax,ay,S.tz,head.localToWorld(V(-.38,0,0)));
+td.userData.home.x=S.dx;bh.position.y=S.dh-1.25;pa.userData.home.y=S.dh-1.25;
+const ev=evalA(),g=ev.g,show=S.posOn||S.cen;
+if(g.H){const u=V(0,0,1),v=S.mode==='table'?V(1,0,0):V(0,1,0),A=S.cw/200,B=S.ch/200,cs2=[[1,1],[1,-1],[-1,-1],[-1,1]].map(([i,j])=>g.H.clone().addScaledVector(u,i*A).addScaledVector(v,j*B)),pa2=fg2.attributes.position,po=fo.geometry.attributes.position;
+pa2.setXYZ(0,g.F.x,g.F.y,g.F.z);cs2.forEach((c,i)=>{pa2.setXYZ(i+1,c.x,c.y,c.z);po.setXYZ(i,c.x,c.y,c.z)});pa2.needsUpdate=po.needsUpdate=true;fg2.computeBoundingSphere()}
+fld.visible=fo.visible=!!g.H&&(show||beamOn());
+const c=S.cen;[mTube,mDet,mPat,mTgt,crL,sidL].forEach(m=>m.visible=c);mHit.visible=c&&!!g.H;
+if(c){const Pc=pBox.setFromObject(P.pv).getCenter(V(0,0,0)),far=g.H||g.F.clone().addScaledVector(g.d,g.sid),sE=S.mode==='table'?V(g.F.x,DY,g.F.z):V(HX,g.F.y,g.F.z);
+mTube.position.copy(g.F);mDet.position.copy(g.C);mPat.position.copy(Pc);mTgt.position.copy(ev.T);if(g.H)mHit.position.copy(g.H);seg(crL,g.F,far);seg(sidL,g.F,sE);
+hp=[g.F,g.C,Pc,ev.T,g.F.clone().lerp(far,.5),g.F.clone().lerp(sE,.5)];ht=['Tube center','Detector center','Patient center','Target: '+(S.ex?S.ex.t:'chest'),'Central Ray','SID '+Math.round(g.sid*100)+' cm']}
+const st=q$('#stat');if(show&&!tT){st.style.display='block';st.className=ev.ok?'okp':'badp';st.textContent=ev.ok?'Centered ✓':'Adjust Position'}else if(!tT)st.style.display='none';
+syncSL()}
+let tT=0;const toast=m=>{const st=q$('#stat');st.style.display='block';st.className='badp';st.textContent=m;clearTimeout(tT);tT=setTimeout(()=>{tT=0;dirty=true},2600)};
+// ---------- UI: positioning panel
+const PRE=[
+['Chest PA','wall','stand',90,'chest',180,35,43,0,'chest','Stand facing the Bucky, chin raised, shoulders rolled forward against the detector, hands on hips. Expose on full inspiration.','Horizontal, perpendicular to the detector, at T7 (inferior scapular angle), midline.','Portrait 35×43 cm, top edge about 5 cm above the shoulders.'],
+['Chest AP','wall','stand',-90,'chest',180,35,43,0,'chest','Back against the Bucky, arms rotated away from the chest. Used when the patient cannot turn or stand PA.','Horizontal, perpendicular to the detector, at T7, midline.','Portrait 35×43 cm, top edge about 5 cm above the shoulders.'],
+['Abdomen AP','table','supine',0,'abd',110,35,43,0,'abd','Supine, arms by the sides, knees slightly flexed. Expose on expiration.','Vertical, perpendicular, at the iliac crest, midline.','Table detector under the abdomen: diaphragm to symphysis pubis.'],
+['Pelvis AP','table','supine',0,'pelvis',110,35,43,0,'pelvis','Supine, legs extended and rotated inward about 15°, ASIS equidistant from the table.','Vertical, midway between ASIS and pubic symphysis, midline.','Table detector centred to the pelvis.'],
+['Skull AP','table','supine',0,'skull',100,24,24,0,'skullAP','Supine, chin tucked so the orbitomeatal line is perpendicular to the detector; no head rotation.','Vertical, perpendicular, to the glabella.','Table detector centred to the head.'],
+['Skull Lateral','wall','sit',0,'skull',100,24,24,0,'skullLat','Seated, sagittal plane parallel to the detector, interpupillary line vertical.','Horizontal, perpendicular, 5 cm above the external auditory meatus.','Wall detector centred to the skull.'],
+['Cervical Spine','wall','stand',0,'cspine',180,24,30,0,'cspine','Lateral view: standing, side against the Bucky, shoulders relaxed and depressed, chin slightly raised.','Horizontal, perpendicular, at C4 (thyroid cartilage).','Portrait 24×30 cm, centred at C4.'],
+['Lumbar Spine','table','supine',0,'lumbar',110,30,40,0,'lumbar','AP view: supine, knees flexed to flatten the lumbar curve.','Vertical, at L3 (iliac crest level), midline.','Table detector centred to L3.'],
+['Knee AP','table','supine',0,'knee',100,20,24,0,'kneeAP','Supine, leg extended, toes pointing up, leg not rotated.','Vertical, 1.25 cm below the patella apex.','Table detector centred to the knee joint.'],
+['Knee Lateral','wall','sit',0,'knee',100,20,24,0,'kneeLat','Seated, knee flexed 20–30°, lateral side against the Bucky.','Horizontal, perpendicular, through the knee joint.','Wall detector lowered to knee height.'],
+['Hand AP','table','sit',0,'hand',100,20,24,0,'hand','Seated beside the table, forearm pronated, palm flat on the detector, fingers slightly separated.','Vertical, perpendicular, at the 3rd metacarpophalangeal joint.','Table detector under the hand.'],
+['Foot AP','table','supine',0,'foot',100,15,25,0,'foot','Supine, knee flexed, sole flat on the detector.','Vertical, perpendicular, at the base of the 3rd metatarsal.','Table detector under the foot.']
+].map(a=>({n:a[0],d:a[1],p:a[2],y:a[3],t:a[4],sid:a[5],cw:a[6],ch:a[7],tilt:a[8],k:a[9],i:a[10],c:a[11],dt:a[12]}));
+const SL=[['Patient X',-250,250,'cm',()=>S.px*100,v=>S.px=v/100],['Patient Z',-150,150,'cm',()=>S.pz*100,v=>S.pz=v/100],['Patient rotation',-180,180,'°',()=>S.yaw/R2,v=>S.yaw=v*R2],['Tube height',50,235,'cm',()=>S.ty*100,v=>S.ty=v/100],['Tube horizontal X',-150,170,'cm',()=>S.tx*100,v=>S.tx=v/100],['Tube cross Z',-60,60,'cm',()=>S.tz*100,v=>S.tz=v/100],['Tube angle',-30,30,'°',()=>S.tilt,v=>S.tilt=v],['Detector position (table)',-60,70,'cm',()=>S.dx*100,v=>S.dx=v/100],['Detector height (wall)',40,170,'cm',()=>S.dh*100,v=>S.dh=v/100],['SID',60,190,'cm',()=>geo().sid*100,v=>{if(S.mode==='table')S.ty=Math.min(2.35,DY+v/100);else S.tx=HX-v/100}],['Collimation width',5,43,'cm',()=>S.cw,v=>S.cw=v],['Collimation length',5,43,'cm',()=>S.ch,v=>S.ch=v]];
+const pnl=document.createElement('div');pnl.id='pp';pnl.className='pn';
+const SEC=(id,t,h)=>`<section class="ac" data-s="${id}"><button class="ah" data-a="${id}"><span>${t}</span><i>▾</i></button><div class="ab">${h}</div></section>`;
+const slh=l=>l.map(i=>`<label><span>${SL[i][0]} <b id="v${i}"></b></span><input type="range" min="${SL[i][1]}" max="${SL[i][2]}" step="1" data-i="${i}"></label>`).join('');
+pnl.innerHTML=`<div class="ph" id="pph"><span class="gr"></span><b>Patient Positioning</b><em id="hs"></em><button id="ppx" aria-label="Close">✕</button></div><div id="ppb">`
++SEC('exam','Examination',`<select id="exs"><option value="">— Select an examination —</option>${PRE.map((p,i)=>`<option value="${i}">${p.n}</option>`).join('')}</select><div id="exi"></div><button id="ba">Auto-align to exam</button>`)
++SEC('pos','Patient Position',`<div class="row" id="pos">${[['stand','Standing'],['supine','Supine'],['prone','Prone'],['sit','Sitting']].map(a=>`<button data-p="${a[0]}">${a[1]}</button>`).join('')}</div>`)
++SEC('adj','Patient Adjustment',slh([0,1,2]))+SEC('tube','Tube Position',slh([3,4,5,6,9]))
++SEC('det','Detector',slh([7,8])+`<button id="bd">Detector: Table</button>`)+SEC('col','Collimation',slh([10,11]))+SEC('chk','Alignment checks','<div id="chk"></div>')+`</div>`;
+document.body.appendChild(pnl);
+const sheet=()=>matchMedia('(max-width:900px) and (orientation:portrait)').matches;
+function layout(){const W=innerWidth,H=innerHeight;let x=0,y=0;
+if(sheet()){if(S.posOn&&pnl.style.display!=='none')y=pnl.offsetHeight/2}
+else{const mn=q$('#menu'),inf=q$('#info'),L=S.posOn?pnl.offsetWidth+10:(getComputedStyle(mn).display!=='none'?mn.offsetWidth+10:0),Rr=inf.classList.contains('show')?inf.offsetWidth+10:0;x=(Rr-L)/2}
+if(x||y)cam.setViewOffset(W,H,x,y,W,H);else cam.clearViewOffset()}
+let lastSig='';
+pnl.addEventListener('click',e=>{const b=e.target.closest('.ah');if(!b)return;const sc2=b.parentNode,o=sc2.classList.contains('open');pnl.querySelectorAll('.ac').forEach(x=>x.classList.remove('open'));if(!o){sc2.classList.add('open');setTimeout(()=>sc2.scrollIntoView({block:'nearest'}),60)}});
+pnl.querySelector('[data-s="exam"]').classList.add('open');
+let sd=null;const ph=pnl.querySelector('#pph'),setH=h=>{pnl.style.setProperty('--ph',Math.round(cl(h,58,innerHeight*.62))+'px');layout()};
+ph.addEventListener('pointerdown',e=>{if(e.target.closest('button')||!sheet())return;sd={y:e.clientY,h:pnl.offsetHeight};ph.setPointerCapture(e.pointerId)});
+ph.addEventListener('pointermove',e=>{if(sd)setH(sd.h+(sd.y-e.clientY))});
+ph.addEventListener('pointerup',()=>{if(!sd)return;const t=sd;sd=null;if(Math.abs(pnl.offsetHeight-t.h)<6)setH(pnl.offsetHeight>110?58:innerHeight*.38)});
+ph.addEventListener('pointercancel',()=>{sd=null});
+addEventListener('resize',layout);q$('#fab').onclick=()=>togglePos(true);
+const res=document.createElement('div');res.id='res';res.className='pn';document.body.appendChild(res);
+function syncSL(){SL.forEach((s,i)=>{const inp=pnl.querySelector(`input[data-i="${i}"]`);if(!inp)return;const v=Math.round(s[4]());if(document.activeElement!==inp)inp.value=v;q$('#v'+i).textContent=v+' '+s[3]});
+pnl.querySelectorAll('#pos button').forEach(b=>b.classList.toggle('on',b.dataset.p===S.pos));q$('#bd').textContent='Detector: '+(S.mode==='wall'?'Wall (Bucky)':'Table');
+const ev=evalA();{const h2=q$('#hs');if(h2){h2.textContent=ev.ok?'Centered ✓':'Adjust Position';h2.className=ev.ok?'okc':'badc'}}q$('#chk').innerHTML=ev.it.map(i=>`<div class="${i[1]?'ok':'bad'}">${i[1]?'✓':'✗'} ${i[0]}${i[1]?'':' — '+i[2]}</div>`).join('')}
+pnl.addEventListener('input',e=>{const i=e.target.dataset.i;if(i==null)return;SL[i][5](+e.target.value);dirty=true});
+function setMode(m){S.mode=m;S.tilt=0;if(m==='table'){S.tx=S.dx;S.ty=DY+1.1;S.tz=0}else{S.tx=HX-1.8;S.ty=S.dh;S.tz=0}}
+q$('#bd').onclick=()=>{setMode(S.mode==='table'?'wall':'table');dirty=true};
+pnl.querySelector('#pos').onclick=e=>{const p=e.target.dataset.p;if(!p)return;S.pos=p;S.armFwd=false;if(p==='stand'||p==='sit'){S.px=1.4;S.pz=0;S.yaw=PI/2}else{S.px=0;S.pz=0;S.yaw=0}dirty=true};
+function autoAlign(){const e=S.ex,sid=(e?e.sid:110)/100;pose();let m=mW(e?e.t:'chest');
+if(S.mode==='table'){S.dx=cl(m.x,-.6,.7);S.px+=S.dx-m.x;S.pz-=m.z;S.tx=S.dx;S.tz=0;S.ty=DY+sid}
+else{S.dh=cl(m.y,.4,1.7);S.pz-=m.z;S.px+=HX-.12-m.x;S.tx=HX-sid;S.ty=S.dh;S.tz=0}
+S.tilt=e?e.tilt:0;dirty=true}
+q$('#ba').onclick=autoAlign;
+q$('#exs').onchange=e=>{const i=e.target.value;if(i===''){S.ex=null;q$('#exi').innerHTML='';dirty=true;return}const x=PRE[+i];S.ex=x;S.pos=x.p;S.yaw=x.y*R2;S.mode=x.d;S.armFwd=x.t==='hand';S.cw=x.cw;S.ch=x.ch;S.px=S.pz=0;
+q$('#exi').innerHTML=`<p><b>Positioning:</b> ${x.i}</p><p><b>Detector:</b> ${x.dt} (${x.d==='wall'?'vertical Bucky':'table detector'})</p><p><b>Central ray:</b> ${x.c}</p><p><b>SID:</b> ${x.sid} cm &nbsp; <b>Collimation:</b> ${x.cw}×${x.ch} cm</p><p class="safe">Educational guidance only.</p>`;autoAlign()};
+function togglePos(on){S.posOn=on;pnl.style.display=on?'flex':'none';document.body.classList.toggle('pos',on);q$('#bpos').classList.toggle('on',on);q$('#fab').classList.toggle('on',on);if(on){if(proc.on)stopProc();if(exp.g){exp.g=0;q$('#bx').classList.remove('on')}}layout();dirty=true}
+function toggleCen(on){S.cen=on;q$('#bcen').classList.toggle('on',on);hud.style.display=on?'block':'none';if(on&&proc.on)stopProc();dirty=true}
+q$('#bpos').onclick=()=>togglePos(!S.posOn);q$('#bcen').onclick=()=>toggleCen(!S.cen);q$('#ppx').onclick=()=>togglePos(false);
+// ---------- simulated radiographs
+function rad(k,w,h,off,cut,txt){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#0b0e11';g.fillRect(0,0,w,h);g.save();g.translate(off[0]*w,off[1]*h);g.shadowColor='rgba(220,230,240,.5)';g.shadowBlur=6;
+const el=(x,y,a,b,f,r)=>{g.fillStyle=f;g.beginPath();g.ellipse(x*w,y*h,a*w,b*h,r||0,0,7);g.fill()},ln=(x1,y1,x2,y2,wd,s)=>{g.strokeStyle=s||'#cfd5da';g.lineWidth=wd*w;g.lineCap='round';g.beginPath();g.moveTo(x1*w,y1*h);g.lineTo(x2*w,y2*h);g.stroke()};
+if(k==='chest')radi(g,w,h);
+else if(k==='abd'){el(.5,.5,.38,.46,'#3a4047');for(let i=0;i<5;i++)el(.5,.12+i*.15,.05,.055,'#c9cfd4');el(.22,.85,.14,.12,'#8e969d');el(.78,.85,.14,.12,'#8e969d');ln(.42,.1,.38,.7,.03,'#5a6168');ln(.58,.1,.62,.7,.03,'#5a6168');el(.33,.45,.08,.06,'#1d2227');el(.68,.4,.09,.05,'#1d2227')}
+else if(k==='pelvis'){el(.27,.35,.2,.22,'#7c848b',-.4);el(.73,.35,.2,.22,'#7c848b',.4);el(.27,.4,.12,.12,'#444b52');el(.73,.4,.12,.12,'#444b52');el(.5,.35,.07,.2,'#b5bcc2');el(.27,.68,.08,.07,'#d5dade');el(.73,.68,.08,.07,'#d5dade');ln(.27,.68,.2,.92,.05);ln(.73,.68,.8,.92,.05);el(.43,.78,.05,.04,'#9aa2a8');el(.57,.78,.05,.04,'#9aa2a8')}
+else if(k==='skullAP'){el(.5,.45,.36,.42,'#9aa2a8');el(.5,.45,.31,.37,'#363c42');el(.36,.42,.07,.05,'#111417');el(.64,.42,.07,.05,'#111417');ln(.5,.45,.5,.62,.02);ln(.3,.55,.45,.5,.03);ln(.7,.55,.55,.5,.03);el(.5,.68,.1,.06,'#20262b');ln(.3,.82,.5,.92,.03);ln(.7,.82,.5,.92,.03)}
+else if(k==='skullLat'){el(.5,.4,.38,.3,'#8d959b');el(.5,.4,.33,.25,'#3a4046');el(.5,.5,.03,.03,'#c5ccd1');el(.8,.55,.12,.12,'#7d858c');ln(.45,.7,.75,.78,.04);ln(.35,.72,.3,.95,.07)}
+else if(k==='cspine'){for(let i=0;i<7;i++){const x=.45-.03*Math.sin(i/6*2),y=.28+i*.09;el(x,y,.07,.04,'#c5ccd1');ln(x-.07,y,x-.2,y+.02,.015)}el(.45,.1,.2,.07,'#7d858c');ln(.7,.14,.78,.2,.04);ln(.62,.1,.6,.9,.04,'#2a3036')}
+else if(k==='lumbar'){for(let i=0;i<5;i++){const y=.15+i*.17;el(.5,y,.09,.075,'#c9cfd4');el(.43,y,.018,.02,'#5a6168');el(.57,y,.018,.02,'#5a6168');ln(.3,y,.7,y,.02,'#aab1b7');el(.5,y,.02,.03,'#e1e5e8')}el(.3,.94,.08,.05,'#8e969d');el(.7,.94,.08,.05,'#8e969d')}
+else if(k==='kneeAP'){ln(.5,0,.5,.38,.2,'#b8bfc4');el(.38,.42,.12,.08,'#d0d6da');el(.62,.42,.12,.08,'#d0d6da');ln(.3,.55,.7,.55,.04);ln(.5,.55,.5,1,.14,'#b8bfc4');ln(.72,.6,.74,1,.05);el(.5,.35,.07,.06,'#5a6168');ln(.3,.5,.7,.5,.012,'#10151a')}
+else if(k==='kneeLat'){ln(.1,.15,.5,.42,.16,'#b8bfc4');el(.52,.44,.11,.11,'#d0d6da');ln(.55,.58,.85,1,.12,'#b8bfc4');el(.72,.4,.05,.07,'#6a7178');ln(.3,.56,.75,.56,.012,'#10151a')}
+else if(k==='hand'){el(.5,.7,.2,.2,'#4b525a');for(let i=0;i<5;i++){const x0=.3+i*.1,x1=.18+i*.16,y1=.1+Math.abs(i-2)*.08;[[0,.38],[.42,.68],[.72,.92]].forEach(([a,b])=>ln(x0+(x1-x0)*a,.62+(y1-.62)*a,x0+(x1-x0)*b,.62+(y1-.62)*b,.03))}ln(.2,.8,.05,.5,.04);el(.45,.82,.1,.06,'#aab1b7')}
+else{el(.5,.78,.16,.14,'#aeb5bb');for(let i=0;i<5;i++){ln(.35+i*.07,.65,.28+i*.1,.32,.03);ln(.28+i*.1,.3,.25+i*.11,.1,.022)}el(.5,.92,.1,.06,'#c5ccd1')}
+g.restore();const id=g.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*18;d[i]+=n;d[i+1]+=n;d[i+2]+=n}g.putImageData(id,0,0);
+g.fillStyle='#000';g.fillRect(0,0,cut[0]*w,h);g.fillRect(w-cut[0]*w,0,cut[0]*w,h);g.fillRect(0,0,w,cut[1]*h);g.fillRect(0,h-cut[1]*h,w,cut[1]*h);
+g.fillStyle='#e8eef3';g.font='bold 18px sans-serif';g.fillText('R',14,28);g.fillStyle='#ffb347';g.font='bold 11px sans-serif';g.fillText('Educational Simulation – Not for Diagnosis',8,h-8);return c}
+// ---------- exposure simulation
+const X={on:false,t:0,n:0,ev:null,acc:0};let lastPid='';
+const beamOn=()=>X.on&&X.t>3.4&&X.t<5.6;
+function cancelX(){if(!X.on)return;X.on=false;window.xFade=false;fl.visible=false;ep.concat(pp2s).forEach(p=>p.m.visible=false);pp2s.forEach(p=>p.on=false);pid='';hl();res.style.display='none';q$('#bexp').classList.remove('on')}
+const pp2s=pp;
+function startX(){if(!S.ex){togglePos(true);toast('Select an examination first');return}
+if(proc.on)stopProc();if(exp.g){exp.g=0;q$('#bx').classList.remove('on')}closeInfo();if(sheet()&&S.posOn)setH(58);
+X.on=true;X.t=0;X.n=0;X.ev=evalA();pBox.setFromObject(P.pv);window.xFade=true;const g=X.ev.g;goal.t.copy(g.F.clone().add(g.C).multiplyScalar(.5));goal.r=Math.max(3,g.sid*1.6)*Math.max(1,.9/cam.aspect);
+res.className='pn';res.style.display='block';res.innerHTML='<b>Exposure checks</b><div id="rl"></div>';q$('#bexp').classList.add('on')}
+q$('#bexp').onclick=()=>X.on?cancelX():startX();
+function showRes(ev){const e=S.ex,g=ev.g,dir=ev.T.clone().sub(g.F).normalize(),s=S.mode==='table'?(DY-g.F.y)/dir.y:(HX-g.F.x)/dir.x,Hp=g.F.clone().addScaledVector(dir,s),dl=Hp.sub(g.C);
+const ox=cl(dl.z/(S.cw/100),-.5,.5),oy=cl((S.mode==='table'?dl.x:-dl.y)/(S.ch/100),-.5,.5),cx=S.cw<e.cw-4?(1-S.cw/e.cw)/2:0,cy2=S.ch<e.ch-4?(1-S.ch/e.ch)/2:0;
+const c=rad(e.k,256,320,[ox*.6,oy*.6],[cx,cy2]);c.style.cssText='width:100%;max-width:300px;display:block;margin:6px auto;border:1px solid #444;border-radius:6px';
+res.className='pn big';res.innerHTML=`<div class="ph"><b>Radiograph – ${e.n}</b><button id="rx">✕</button></div><div class="warn">Educational Simulation – Not for Diagnosis</div>`;res.appendChild(c);
+const d=document.createElement('div');d.innerHTML=ev.ok?'<div class="ok">✓ Good positioning: acceptable training image.</div>':ev.it.filter(i=>!i[1]).map(i=>`<div class="bad">✗ ${i[0]} — ${i[2]}</div>`).join('')+'<div class="bad">Positioning errors: this image would be repeated (retake).</div>';res.appendChild(d);q$('#rx').onclick=()=>{res.style.display='none'}}
+window.posLoop=(dt,T)=>{
+if(dirty){dirty=false;update()}
+const sg=[innerWidth,innerHeight,S.posOn,q$('#info').className,q$('#menu').className].join();if(sg!==lastSig){lastSig=sg;layout()}
+if(S.cen){const W2=innerWidth,H2=innerHeight;HL.forEach((d,i)=>{if(!hp[i])return;const p=hp[i].clone().project(cam);d.style.display=p.z<1?'block':'none';d.style.left=(p.x*.5+.5)*W2+'px';d.style.top=(-p.y*.5+.5)*H2-14+'px';d.textContent=ht[i]})}
+if(!X.on)return;X.t+=dt;const t=X.t,ev=X.ev,g=geo();
+const n=Math.min(ev.it.length,Math.floor(t/.35)+1);if(n!==X.n){X.n=n;const r=q$('#rl');if(r)r.innerHTML=ev.it.slice(0,n).map(i=>`<div class="${i[1]?'ok':'bad'}">${i[1]?'✓':'✗'} ${i[0]}${i[1]?'':' — '+i[2]}</div>`).join('')}
+const el=t>2.2&&t<5.6;fl.visible=el;if(el){fl.position.copy(g.F);fl.scale.setScalar(1+.4*Math.sin(T*18))}
+ep.forEach((q,i)=>{const m=q.m;m.visible=el;if(!el)return;q.t=(q.t+dt*.7)%1;m.position.copy(head.localToWorld(V(-.17+q.t*q.t*.166,Math.sin(i*9+T*8)*.008*(1-q.t),Math.cos(i*7)*.008*(1-q.t))))});
+const np=t>5.6?(S.mode==='wall'?'panel':'tabledet'):el?'tube':'';if(np!==lastPid){lastPid=np;pid=np;hl()}
+fld.visible=fo.visible=!!g.H&&(S.posOn||S.cen||beamOn());fld.material.opacity=beamOn()?.28+.08*Math.sin(T*20):.18;
+if(beamOn()&&g.H){X.acc+=dt*70;while(X.acc>=1){X.acc--;const p=pp2s.find(q=>!q.on);if(!p)break;const tgt=g.H.clone().addScaledVector(V(0,0,1),(Math.random()-.5)*S.cw/100).addScaledVector(S.mode==='table'?V(1,0,0):V(0,1,0),(Math.random()-.5)*S.ch/100),dist=g.F.distanceTo(tgt),dir=tgt.clone().sub(g.F).normalize(),hit=new THREE.Ray(g.F.clone(),dir).intersectBox(pBox,V(0,0,0));
+p.v.copy(dir).multiplyScalar(1.9);p.max=hit&&Math.random()<.45?g.F.distanceTo(hit)+Math.random()*.15:dist;p.m.position.copy(g.F);p.on=true;p.m.visible=true}}
+pp2s.forEach(p=>{if(!p.on)return;p.m.position.addScaledVector(p.v,dt);if(p.m.position.distanceTo(g.F)>p.max){p.on=false;p.m.visible=false}});
+if(t>6.9){const e2=ev;cancelX();showRes(e2)}}
+// ---------- drag the patient (Positioning mode)
+let drag=null;const rc2=new THREE.Raycaster(),m2=new THREE.Vector2(),pl=new THREE.Plane(V(0,1,0),0);
+const ray=e=>{const b=R.getBoundingClientRect();m2.set((e.clientX-b.left)/b.width*2-1,-((e.clientY-b.top)/b.height)*2+1);rc2.setFromCamera(m2,cam)};
+window.patientDown=e=>{if(!S.posOn||!P.pv.visible)return false;ray(e);const h=rc2.intersectObject(P.pv,true)[0];if(!h)return false;R.setPointerCapture(e.pointerId);drag={y:h.point.y,ox:h.point.x-S.px,oz:h.point.z-S.pz,lx:e.clientX};return true};
+window.patientMove=e=>{if(!drag)return false;if(e.shiftKey||(e.buttons&2)){S.yaw+=(e.clientX-drag.lx)*.01;drag.lx=e.clientX}else{ray(e);pl.constant=-drag.y;const p=rc2.ray.intersectPlane(pl,V(0,0,0));if(p){S.px=cl(p.x-drag.ox,-2.5,2.5);S.pz=cl(p.z-drag.oz,-1.5,1.5)}}dirty=true;return true};
+window.patientUp=e=>{if(!drag)return false;drag=null;return true};
+// ---------- hooks used by the existing modes
+function resetTube(){S.mode='table';S.dx=0;S.tx=0;S.ty=FW;S.tz=0;S.tilt=0;S.cw=S.ch=30;dirty=true}
+window.onProcStart=()=>{cancelX();resetTube();togglePos(false);toggleCen(false);P.pv.visible=false;q$('#stat').style.display='none'};
+window.onProcStop=()=>{P.pv.visible=true};
+window.onExplode=()=>{cancelX();resetTube()};
+let lp=cam.aspect<1;addEventListener('resize',()=>{const p=cam.aspect<1;if(p!==lp){lp=p;home()}});
+update();
+})();
+
+/* Visual realism pass: softer lighting, medical plastics/metals, extra hardware detail */
+(()=>{
+if(typeof THREE==='undefined')return;
+const mk3=(p,...a)=>{const o=mk(p,...a);o.userData.ids=[];for(let q=o.parent;q;q=q.parent)if(q.userData.id)o.userData.ids.push(q.userData.id);return o};
+const hm3=(...a)=>{const o=mk3(hs,...a);o.material.transparent=true;fade.push(o.material);return o};
+const ACC=()=>M(0x2a6f97,.2,.5),YEL=()=>M(0xd9b000,.1,.6),LED=c=>M(c,.2,.4,{emissive:c,emissiveIntensity:.9});
+// lights: soft fill + warm ceiling bounce for depth
+const fillL=new THREE.DirectionalLight(0x9db4d6,.28);fillL.position.set(-5,3,-3);sc.add(fillL);
+const ceil=new THREE.PointLight(0xfff0dc,.5,12,2);ceil.position.set(0,2.9,1.5);sc.add(ceil);
+[[6,3,6,.3,5,.3],[-6,3,-6,.3,5,.3],[0,3.8,-6,6,.2,.2]].forEach(a=>{const m=new THREE.Mesh(new THREE.BoxGeometry(a[3],a[4],a[5]),new THREE.MeshBasicMaterial({color:new THREE.Color(1,1,1).multiplyScalar(4)}));m.position.set(a[0],a[1],a[2]);es.add(m)});
+try{sc.environment=pm.fromScene(es,.03).texture}catch(e){__D.errs.push('Environment map skipped: '+e.message)}
+// floor tiles + warning sign
+const ft=cvT(128,128,(g,w,h)=>{g.fillStyle='#a3abb4';g.fillRect(0,0,w,h);for(let i=0;i<500;i++){g.fillStyle=i%2?'rgba(255,255,255,.03)':'rgba(0,0,0,.03)';g.fillRect(Math.random()*w,Math.random()*h,2,2)}g.strokeStyle='#8a929b';g.lineWidth=2;g.strokeRect(0,0,w,h)});
+ft.wrapS=ft.wrapT=THREE.RepeatWrapping;ft.repeat.set(40,40);ft.anisotropy=4;fl0.material.map=ft;fl0.material.color.set(0xffffff);fl0.material.needsUpdate=true;fl1.visible=false;
+const sgT=cvT(128,160,(g,w,h)=>{g.fillStyle='#d6a800';g.fillRect(0,0,w,h);g.fillStyle='#111';for(let k=0;k<3;k++){g.beginPath();g.moveTo(64,62);g.arc(64,62,40,k*2.094+.52,k*2.094+1.57);g.fill()}g.fillStyle='#d6a800';g.beginPath();g.arc(64,62,9,0,7);g.fill();g.fillStyle='#111';g.font='bold 15px sans-serif';g.textAlign='center';g.fillText('RADIATION',64,130)});
+const sgn=new THREE.Mesh(new THREE.PlaneGeometry(.32,.4),new THREE.MeshBasicMaterial({map:sgT}));sgn.position.set(1.6,1.5,-2.485);sc.add(sgn);
+// X-ray tube housing: bevelled edges, accent band, end plates, handle, warning label
+const SE=()=>M(0x9aa1a8,.9,.35);
+[-1,1].forEach(a=>[-1,1].forEach(b=>{hm3(cy(.016,.016,.74,12),SE(),.05,a*.15,b*.15,0,0,PI/2);hm3(cy(.016,.016,.3,12),SE(),-.32,0,a*.15);hm3(cy(.016,.016,.3,12),SE(),.42,0,a*.15);hm3(cy(.016,.016,.3,12),SE(),a>0?-.32:.42,b*.15,0,PI/2,0,0)}));
+hm3(bx(.06,.306,.306),ACC(),-.12,0,0);hm3(bx(.015,.32,.32),DK(),-.327,0,0);hm3(bx(.015,.32,.32),DK(),.427,0,0);
+hm3(bx(.13,.07,.003),YEL(),.22,0,.152);hm3(cy(.018,.018,.004,16),DK(),.22,0,.153,PI/2,0,0);
+[-.08,.2].forEach(x=>hm3(cy(.01,.01,.04,10),SE(),x,0,.17,PI/2,0,0));hm3(cy(.012,.012,.3,10),SE(),.06,0,.19,0,0,PI/2);
+// collimator: flange, control panel + display, lower ring, knobs
+mk3(co,bx(.34,.018,.34),M(0x6f767d,.9,.35),0,1.761,0);mk3(co,bx(.12,.055,.02),DK(),0,1.7,.16);mk3(co,bx(.08,.03,.005),M(0x103a52,.2,.4,{emissive:0x29a7ff,emissiveIntensity:.8}),0,1.7,.172);
+mk3(co,tor(.115,.008,32),DK(),0,1.628,0,PI/2,0,0);[-1,1].forEach(s=>mk3(co,cy(.014,.014,.04),ST(),s*.17,1.69,0,0,0,PI/2));
+// tube stand: telescopic rings, cable guide, end trucks and stops
+[2.3,2.55].forEach(y=>mk3(c2,cy(.097,.097,.02),SE(),0,y,0));mk3(c2,bx(.04,.45,.03),DK(),0,2.4,.11);
+[-1,1].forEach(s=>{mk3(c1,bx(.22,.12,.2),ST(),0,2.9,s*.58);[-1,1].forEach(t=>mk3(ts,bx(.06,.14,.14),DK(),t*2.8,2.95,s*.55))});
+// wall stand / bucky: panel frame, grips, LED, column cover, rubber feet
+[1.0125,1.4875].forEach(y=>mk3(bh,bx(.014,.025,.5),DK(),1.724,y,0));[-1,1].forEach(s=>{mk3(bh,bx(.014,.45,.025),DK(),1.724,1.25,s*.2375);mk3(bh,cy(.012,.012,.3),SE(),1.72,1.25,s*.31)});
+mk3(bh,bx(.006,.012,.1),LED(0x22cc66),1.735,1.545,0);mk3(bk,bx(.16,.5,.22),DK(),2.05,.3,0);[-1,1].forEach(a=>[-1,1].forEach(b=>mk3(bk,bx(.06,.02,.06),DK(),1.95+a*.28,.01,b*.4)));
+// table: end caps, detector slot, centre line, pedestal collar, foot pedal
+[-1,1].forEach(s=>mk3(tb,bx(.03,.09,.72),SE(),s,.85,0));mk3(tb,bx(1.2,.03,.006),DK(),0,.85,.352);mk3(tb,bx(1.9,.002,.004),M(0xcdd2d6,0,.6),0,.9205,0);
+mk3(tb,cy(.27,.27,.04),DK(),-.7,.79,0);mk3(tb,bx(.18,.04,.1),DK(),-.2,.02,.5);
+// generator + console details
+mk3(ge,bx(.704,.04,.504),ACC(),-2.6,1.4,-1.4);mk3(ge,bx(.003,1.3,.003),DK(),-2.6,.8,-1.149);mk3(ge,bx(.02,.18,.03),SE(),-2.3,.8,-1.13);
+mk3(cs,bx(.05,.04,.09),M(0x20527a,.2,.5),-2.3,.78,1.15);mk3(cs,bx(.04,.02,.07),DK(),-2.35,.775,1.18);
+// per-part tint: no pure white, slight variation between materials
+const tint=(id,hex)=>E[id].traverse(o=>{if(o.isMesh&&o.material.metalness<.2&&o.material.color.getHex()===0xb4b8bb)o.material.color.setHex(hex)});
+tint('collimator',0xb9bcbe);tint('bucky',0xaeb2b5);tint('table',0xbec1c3);tint('generator',0xa2a7ab);tint('console',0xa8acaf);tint('tubestand',0xb2b6b9);tint('tube',0xa9aeb1);
+sc.traverse(o=>{if(o.isMesh&&o.material&&o.material.isMeshStandardMaterial)o.material.envMapIntensity=.8});
+})();
+
+/* Arabic Guide + About (editable, saved in browser storage) */
+(()=>{
+const q=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let A={name:'حسين',uni:'',dept:'',prof:'',year:''};try{Object.assign(A,JSON.parse(localStorage.getItem('drx_about')||'{}'))}catch(e){}
+const gd=document.createElement('div');gd.id='gd';gd.className='pn';gd.dir='rtl';document.body.appendChild(gd);
+const GUIDE=`<h3>طريقة التحكم</h3><ul><li>تدوير الجهاز: اسحب بإصبع واحد (أو بالماوس).</li><li>تكبير وتصغير: قرصة بإصبعين (أو عجلة الماوس).</li><li>تحريك المشهد: اسحب بإصبعين (أو بالزر الأيمن / Shift مع الماوس).</li><li>اختيار جزء: اضغط عليه فتظهر معلوماته ويقترب المشهد منه.</li></ul>
+<h3>الأزرار</h3><ul><li><b>Components:</b> قائمة مكونات الجهاز (الأنبوب، الكولميتر، الـBucky، الديتكتر...).</li><li><b>Educational Mode:</b> تسميات وأسهم فوق الأجزاء.</li><li><b>Exploded View:</b> تفكيك الأجزاء لرؤية البنية، وتفاصيل الأنبوب الداخلية.</li><li><b>How X-rays are Produced:</b> رسوم متحركة بثماني خطوات لإنتاج الأشعة السينية.</li><li><b>Patient Positioning:</b> اختيار الفحص ووضعية المريض وتحريك الأنبوب والديتكتر والتحجيب.</li><li><b>Centering Mode:</b> إظهار الشعاع المركزي وSID، وتظهر "Centered ✓" عند الضبط الصحيح.</li><li><b>Exposure Simulation:</b> فحص الضبط ثم محاكاة التعريض وعرض صورة تعليمية.</li><li><b>Reset View:</b> إرجاع الكاميرا للوضع الأصلي.</li></ul>
+<h3>تمرين سريع</h3><ol><li>اضغط Patient Positioning واختر فحصاً (مثل Chest PA).</li><li>اضغط Auto-align أو حرّك المنزلقات يدوياً.</li><li>فعّل Centering Mode حتى تظهر "Centered ✓".</li><li>اضغط Exposure Simulation وشاهد الصورة الناتجة.</li></ol><p class="warn">محاكاة تعليمية – ليست للتشخيص الطبي.</p><p id="ofl"></p>`;
+const about=()=>{const L=[['إعداد',A.name],['الجامعة',A.uni],['القسم',A.dept],['بإشراف',A.prof],['السنة',A.year]].filter(r=>r[1]);return `<h3>DR X-Ray Simulator</h3><p>محاكي ثلاثي الأبعاد تفاعلي لجهاز الأشعة الرقمي (DR) لأغراض تعليمية في الفيزياء الطبية والتصوير الإشعاعي.</p>${L.length?'<ul>'+L.map(r=>`<li><b>${r[0]}:</b> ${esc(r[1])}</li>`).join('')+'</ul>':''}<p>التقنية: Three.js (WebGL) – يعمل من المتصفح على الهاتف والحاسوب.</p><p class="warn">Educational Simulation – Not for Diagnosis</p><p id="ofl"></p><button data-g="edit">تعديل البيانات</button> <button data-g="diag">شاشة التشخيص</button>`};
+const edit=()=>`<h3>تعديل بيانات المشروع</h3>${[['name','الاسم'],['uni','الجامعة'],['dept','القسم'],['prof','الأستاذ المشرف'],['year','السنة']].map(f=>`<label>${f[1]}<input data-f="${f[0]}" value="${esc(A[f[0]]||'')}"></label>`).join('')}<button data-g="save">حفظ</button> <button data-g="about">رجوع</button>`;
+function show(t){gd.innerHTML=`<div class="gh"><button data-g="guide" class="${t==='guide'?'on':''}">دليل الاستخدام</button><button data-g="about" class="${t==='about'||t==='edit'?'on':''}">عن المشروع</button><button data-g="off" class="${t==='off'?'on':''}">Offline</button><span style="flex:1"></span><button data-g="close" aria-label="إغلاق">✕</button></div><div class="gb">${t==='guide'?GUIDE:t==='edit'?edit():t==='off'?offTab():about()}</div>`;gd.style.display='flex';if(t==='off')runOff();else offStatus()}
+const LIBRE=/three(\.min)?\.js/;
+async function offCheck(){const R=[],D=window.__D||{},add=(ok,t,why)=>R.push({ok:!!ok,t,why:ok?'':why});
+const emb=typeof THREE!=='undefined'&&!document.querySelector('script[src*="three"]'),sw='serviceWorker' in navigator,reg=sw?await navigator.serviceWorker.getRegistration().catch(()=>null):null;
+const ts_=document.querySelector('script[src*="three"]'),src_=ts_?ts_.getAttribute('src'):'',loc=emb||(ts_&&!/^(https?:)?\/\//i.test(src_)),rev=typeof THREE!=='undefined'?THREE.REVISION:null,r128=rev==='128'&&loc;
+add(r128,(r128?'Three.js r128: ✓ Local':'Three.js r128: Local')+(emb?' (مضمّنة داخل الملف)':' ('+src_+')')+' – THREE.REVISION = '+rev,rev===null?'three.min.js غير موجود بجانب index.html: ارفعه إلى GitHub (نزّله من get-three.html)':rev!=='128'?'الموجودة r'+rev+' وليست r128':'Three.js تُحمَّل من الإنترنت (CDN) وليس من ملف محلي');
+add(D.gl&&D.ren,'WebGL يعمل (Renderer created)','WebGL غير متاح أو فشل إنشاء الـRenderer');
+add(emb||reg,'Service Worker مسجّل',!sw?'هذا الوضع لا يدعم Service Worker (يلزم رابط https وليس ملفاً محلياً)':'لم يُسجَّل بعد: أعد تحميل الصفحة وانت متصل');
+add(emb||(sw&&navigator.serviceWorker.controller),'Service Worker يتحكم بالصفحة','أعد تحميل الصفحة، أو افتح التطبيق من الشاشة الرئيسية مرة وانت متصل');
+let lw=emb?'مضمّنة داخل الملف':'';if(!emb&&'caches' in window){try{for(const n of await caches.keys()){const k=(await (await caches.open(n)).keys()).find(r=>LIBRE.test(r.url));if(k){lw=k.url;break}}}catch(e){}}
+add(lw,'Three.js محفوظة في Cache'+(lw?' ('+lw.replace(/^https?:\/\//,'').slice(0,46)+')':''),'لم تُخزَّن: افتح الرابط وانت متصل ثم اضغط "إعادة محاولة التخزين"');
+const miss=[];if(!emb){if('caches' in window){for(const f of ['index.html','manifest.json','icon-192.png','icon-512.png']){let h=null;try{h=await caches.match(new URL(f,location.href).href)}catch(e){}if(!h)miss.push(f)}}else miss.push('Cache غير متاح')}
+add(emb||!miss.length,'الملفات الأساسية في Cache (index وmanifest والأيقونات)','ناقص: '+miss.join('، '));
+add(D.machine,'Machine 3D تم إنشاؤها','لم تُنشأ أجزاء الجهاز');add(D.frame,'أول Frame تم رسمه','المشهد لم يبدأ الرسم');
+const er=(D.errs||[]).filter(e=>!/^Environment map/.test(e));add(!er.length,'لا توجد أخطاء JavaScript','الأخطاء: '+er.join(' | '));return R}
+const rows=R=>R.map(r=>`<div class="${r.ok?'ok':'bad'}">${r.ok&&r.t.indexOf('✓')>=0?'':r.ok?'✓ ':'✕ '}${r.t}${r.ok?'':'<br><small>↳ '+esc(r.why)+'</small>'}</div>`).join('');
+const sum=R=>{const f=R.filter(r=>!r.ok);return f.length?'✕ لم يكتمل التخزين: '+f.slice(0,2).map(r=>r.why).join(' – '):'✓ جاهز للعمل بدون إنترنت'};
+async function offStatus(){const el=gd.querySelector('#ofl');if(!el)return;try{const R=await offCheck();el.textContent=sum(R);el.className=R.every(r=>r.ok)?'ok':'bad'}catch(e){el.textContent='تعذر الفحص: '+e.message}}
+async function runOff(){const el=gd.querySelector('#offr');if(!el)return;el.textContent='جاري الفحص…';try{const R=await offCheck();el.innerHTML=rows(R);const o=gd.querySelector('#ofl');if(o){o.textContent=sum(R);o.className=R.every(r=>r.ok)?'ok':'bad'}}catch(e){el.textContent='تعذر الفحص: '+e.message}}
+const offTab=()=>`<h3>حالة العمل بدون إنترنت</h3><p id="ofl"></p><button data-g="runoff">اختبار وضع عدم الاتصال</button> ${window.cacheLib?'<button data-g="retry">إعادة محاولة التخزين</button>':''}<div id="offr"></div><p>على iPhone: بعد Add to Home Screen افتح التطبيق من الشاشة الرئيسية مرة وانت متصل، وانتظر ظهور ✓، ثم فعّل وضع الطيران. (قد يستخدم التطبيق المضاف تخزيناً منفصلاً عن Safari.)</p>`;
+gd.addEventListener('click',e=>{const g=e.target.dataset.g;if(!g)return;if(g==='runoff'){runOff();return}if(g==='retry'){const e=gd.querySelector('#offr');if(e)e.textContent='جاري محاولة التخزين…';window.cacheLib().then(()=>runOff());return}if(g==='diag'){if(window.showDiag)showDiag('Manual diagnostics');return}if(g==='close'){gd.style.display='none';q('#bguide').classList.remove('on')}else if(g==='save'){gd.querySelectorAll('input[data-f]').forEach(i=>A[i.dataset.f]=i.value.trim());try{localStorage.setItem('drx_about',JSON.stringify(A))}catch(x){}show('about')}else show(g)});
+q('#bguide').onclick=e=>{if(gd.style.display==='flex'){gd.style.display='none';e.currentTarget.classList.remove('on')}else{show('guide');e.currentTarget.classList.add('on')}};
+})();
+
+/* Reference-style restyle: floor-mounted tube stand on rail, cabinet table, round-base wall stand, periwinkle accents */
+(()=>{
+if(typeof THREE==='undefined')return;
+const mk3=(p,...a)=>{const o=mk(p,...a);o.userData.ids=[];for(let q=o.parent;q;q=q.parent)if(q.userData.id)o.userData.ids.push(q.userData.id);return o};
+const drop=(par,test)=>[...par.children].filter(test).forEach(o=>{par.remove(o);o.traverse(m=>{const i=pk.indexOf(m);if(i>=0)pk.splice(i,1)})});
+const PB=()=>M(0x8f9bd4,.1,.5),LT=()=>M(0xdadde0,.05,.5),ZC=-.62;
+// ---- tube stand: floor rail + column + carriage + horizontal arm + coiled cable
+drop(ts,()=>true);ts.userData.ex.set(-.45,0,-.45);
+mk3(ts,bx(3.4,.03,.22),DK(),0,.015,ZC);mk3(ts,bx(3.4,.012,.05),ST(),0,.036,ZC);
+const colG=gr(null,ts);
+mk3(colG,bx(.5,.05,.42),DK(),0,.025,ZC);mk3(colG,bx(.22,2.45,.2),LT(),0,1.25,ZC);mk3(colG,bx(.25,.12,.23),PB(),0,2.52,ZC);mk3(colG,bx(.05,2.2,.012),DK(),0,1.3,ZC+.106);
+const car=mk3(colG,bx(.3,.42,.3),LT(),0,1.9,ZC+.02);mk3(car,bx(.31,.04,.31),PB(),0,.2,0);
+const arm=mk3(colG,bx(.1,.12,1),LT(),0,1.9,0);
+drop(cb,()=>true);
+const tubeG=(pts,r,n)=>new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),n,r,6,false),seed=[V(0,0,0),V(0,.1,0)];
+const cab=[mk3(cb,tubeG(seed,.022,4),DK()),mk3(cb,tubeG(seed,.014,4),DK())];
+window.standUpdate=(ax,ay,tz,hp)=>{
+colG.position.x=ax;car.position.y=arm.position.y=ay+.08;
+const len=Math.max(.05,tz-(ZC+.17));arm.scale.z=len;arm.position.z=ZC+.17+len/2;
+cab[0].geometry.dispose();cab[0].geometry=tubeG([V(-1.7,1.5,-1.4),V(-1.7,1.0,-1.65),V(-1.45,.12,-1.45),V(ax-.4,.05,-1.0),V(ax,.06,ZC-.14),V(ax,1.2,ZC-.13),V(ax,2.3,ZC-.14)],.022,60);
+const a=V(ax,2.3,ZC-.14),pts=[],N=140;
+for(let i=0;i<=N;i++){const t=i/N,u=t*t*(3-2*t),th=t*80;pts.push(V(a.x+(hp.x-a.x)*u+Math.cos(th)*.025,a.y+(hp.y-a.y)*t-Math.sin(PI*t)*.25,a.z+(hp.z-a.z)*u+Math.sin(th)*.025))}
+cab[1].geometry.dispose();cab[1].geometry=tubeG(pts,.012,N*2)};
+standUpdate(0,FW+.33,0,V(-.38,FW,0));
+// ---- patient table: white cabinet body, lavender edge stripes, dark recess for the detector tray, foot plate
+drop(tb,o=>Math.abs(o.position.x+.7)<.01);
+[-1,1].forEach(s=>{mk3(tb,bx(.32,.79,.6),LT(),s*.84,.395,0);mk3(tb,bx(.325,.02,.61),PB(),s*.84,.78,0);mk3(tb,bx(2.02,.014,.014),PB(),0,.868,s*.352)});
+mk3(tb,bx(1.36,.22,.58),LT(),0,.11,0);mk3(tb,bx(1.2,.14,.012),PB(),0,.13,.296);mk3(tb,bx(1.36,.55,.01),DK(),0,.5,-.29);mk3(tb,bx(1.5,.04,.36),DK(),0,.02,.52);
+const pad=tb.children.find(o=>o.geometry.parameters&&o.geometry.parameters.width===1.9&&o.geometry.parameters.height===.03);if(pad){pad.material.color.setHex(0xdfe3e7);pad.material.metalness=0;pad.material.roughness=.65}
+// ---- wall stand (Bucky): round black base, lavender cap, lavender detector face with crosshair
+drop(bk,o=>{const p=o.geometry&&o.geometry.parameters;return p&&((p.width===.7&&p.height===.08)||(p.width===.06&&p.height===.02))});
+mk3(bk,cy(.5,.52,.05,48),DK(),2.05,.025,0);mk3(bk,bx(.19,.1,.26),PB(),2.05,2.17,0);
+pa.children.forEach(o=>{const c=o.material.color.getHex();if(c===0x1c2a3c)o.material.color.setHex(0x8f9bd4);if(c===0x2d6ca8){o.material.color.setHex(0xb4c0ee);o.material.emissive.setHex(0x1c2650);o.userData.be=o.material.emissive.clone()}});
+const XL=()=>M(0x5a6aa8,.2,.5);mk3(pa,bx(.003,.003,.4),XL(),1.7105,1.25,0);mk3(pa,bx(.003,.4,.003),XL(),1.7105,1.25,0);mk3(pa,tor(.07,.003,48),XL(),1.7105,1.25,0,0,PI/2,0);
+// ---- tube head control panel (display, keypad, lavender handle ring)
+mk3(co,bx(.2,.17,.03),PB(),0,1.69,.175);mk3(co,bx(.13,.08,.012),M(0x0d2a46,.2,.4,{emissive:0x39a8ff,emissiveIntensity:.8}),0,1.715,.194);
+for(let i=0;i<3;i++)for(let j=0;j<2;j++)mk3(co,bx(.026,.014,.008),W(),-.04+i*.04,1.655-j*.02,.194);
+mk3(co,tor(.115,.014,28),PB(),0,1.69,.175);
+// ---- palette: teal accents -> lavender, plastics lighter (white/light gray like the reference)
+pk.forEach(o=>{const c=o.material.color,h=c.getHex();if(h===0x2a6f97)c.setHex(0x8f9bd4);if(h===0x20527a)c.setHex(0x6f80c4);const m=o.material;if(m.metalness<.2&&c.r>.55&&c.r<.78&&Math.abs(c.r-c.b)<.06)c.multiplyScalar(1.22)});
+})();
+
+</script>
+</body></html>
